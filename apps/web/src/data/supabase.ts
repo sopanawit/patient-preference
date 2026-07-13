@@ -21,6 +21,23 @@ import { APP_SETTING_KEYS } from "@patient-preference/shared";
 
 const BACKEND_TODO = "Supabase backend สำหรับส่วนนี้ยังไม่ทำ (จะทำในเฟส backend)";
 
+// facade ที่ระบุ type ของ auth surface ที่เราใช้เอง — ไม่พึ่งการ resolve type ของ
+// transitive deps ของ supabase-js (บาง environment เช่น CI resolve type ของ
+// @supabase/auth-js ไม่ครบ ทำให้ .auth เสีย method) เมธอดเหล่านี้มีจริงตอน runtime
+type SessionUser = { id: string };
+interface AuthFacade {
+  getSession(): Promise<{ data: { session: { user: SessionUser } | null } }>;
+  onAuthStateChange(
+    cb: (event: string, session: { user: SessionUser } | null) => void,
+  ): { data: { subscription: { unsubscribe(): void } } };
+  signInWithPassword(creds: {
+    email: string;
+    password: string;
+  }): Promise<{ error: { message: string } | null }>;
+  signOut(): Promise<unknown>;
+}
+const sbAuth = (): AuthFacade => supabase.auth as unknown as AuthFacade;
+
 async function fetchProfile(userId: string): Promise<StaffProfile | null> {
   const { data } = await supabase
     .from("staff")
@@ -32,23 +49,25 @@ async function fetchProfile(userId: string): Promise<StaffProfile | null> {
 
 const auth: AuthApi = {
   async getCurrent(): Promise<AuthSnapshot> {
-    const { data } = await supabase.auth.getSession();
+    const { data } = await sbAuth().getSession();
     const userId = data.session?.user.id ?? null;
     return { userId, profile: userId ? await fetchProfile(userId) : null };
   },
   onChange(cb) {
-    const { data } = supabase.auth.onAuthStateChange(async (_e, session) => {
+    const { data } = sbAuth().onAuthStateChange((_e, session) => {
       const userId = session?.user.id ?? null;
-      cb({ userId, profile: userId ? await fetchProfile(userId) : null });
+      void (async () => {
+        cb({ userId, profile: userId ? await fetchProfile(userId) : null });
+      })();
     });
     return () => data.subscription.unsubscribe();
   },
   async signIn(email, password) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await sbAuth().signInWithPassword({ email, password });
     return { error: error ? error.message : null };
   },
   async signOut() {
-    await supabase.auth.signOut();
+    await sbAuth().signOut();
   },
 };
 
@@ -128,7 +147,8 @@ const access: AccessApi = {
 const settings: SettingsApi = {
   async getLineConfig() {
     const { data } = await supabase.from("app_settings").select("key, value");
-    return Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
+    const rows = (data ?? []) as { key: string; value: string }[];
+    return Object.fromEntries(rows.map((r) => [r.key, r.value]));
   },
   async saveLineConfig(values, actorId) {
     await Promise.all(
