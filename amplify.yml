@@ -5,6 +5,7 @@
 # ต้องตั้ง environment variables เหล่านี้ใน Amplify Console (App settings > Environment variables):
 #   VITE_SUPABASE_URL       — URL ของ Supabase project
 #   VITE_SUPABASE_ANON_KEY  — anon key เท่านั้น (ห้ามใส่ service_role key)
+#   VITE_DATA_BACKEND       — 'mock' (ค่าเริ่มต้น ไม่ต้องมี Supabase) หรือ 'supabase'
 version: 1
 frontend:
   phases:
@@ -15,8 +16,9 @@ frontend:
         - export BUN_INSTALL="$HOME/.bun"
         - export PATH="$BUN_INSTALL/bin:$PATH"
         - bun --version
-        # ติดตั้ง dependencies ของทุก workspace จาก root
-        - bun install
+        # ติดตั้งแบบ deterministic ตาม bun.lock ที่ commit ไว้
+        # (--frozen-lockfile กัน dependency ที่ resolve ไม่ตรงกันระหว่าง local/CI)
+        - bun install --frozen-lockfile
         # เขียนค่า env จาก Amplify Console ลง .env ให้ Vite อ่านตอน build
         - echo "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" >> apps/web/.env
         - echo "VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY" >> apps/web/.env
@@ -32,7 +34,7 @@ frontend:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/*
-      - apps/web/node_modules/**/*
-      - packages/shared/node_modules/**/*
+      # cache เฉพาะ global download cache ของ bun (ให้ install เร็ว)
+      # ไม่ cache node_modules — สร้างใหม่ทุก build จาก lockfile เพื่อกัน
+      # dependency tree ที่ค้างไม่ตรงกัน (เคยทำให้ type ของ @supabase เพี้ยน)
       - $HOME/.bun/**/*
