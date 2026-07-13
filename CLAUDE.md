@@ -371,6 +371,13 @@ create table audit_log (
 - **Phase 3 — Review workflow:** คิวรอตรวจ CX, state machine, regenerate+เด้งกลับเมื่อแก้, gate การแสดง action
 - **Phase 4 — Hardening:** audit log, PDPA guards, edge cases, polish
 
+> **ปรับลำดับการสร้าง (frontend-first):** ตกลงทำ **UI ทุกหน้าให้ครบก่อน** แล้วค่อยทำ backend
+> จริง โดยทุกหน้าคุยผ่าน **data-access layer** (`apps/web/src/data/`) ที่มี 2 implementation:
+> `mock` (in-memory + seed + AI จำลอง — ค่าเริ่มต้น เดโมได้โดยไม่ต้องมี backend) และ `supabase`
+> (ต่อของจริง) สลับด้วย env `VITE_DATA_BACKEND` — UI ไม่ต้องแก้เมื่อสลับ
+> สถานะ backend ปัจจุบัน: auth/access/settings/departments/dashboard มี supabase impl แล้ว ;
+> patients/analysis (CRUD + AI) ยังเป็น mock เท่านั้น รอทำในเฟส backend
+
 ---
 
 ## 14. Coding Conventions (สรุป)
@@ -380,6 +387,7 @@ create table audit_log (
 - ทุก mutation ที่กระทบข้อมูลบุคคล → เขียน audit_log
 - แยก transaction: การบันทึก free text ต้องไม่ล้มเพราะ AI ล้ม
 - เขียน migration เป็นไฟล์ (ไม่แก้ schema ด้วยมือบน dashboard อย่างเดียว)
+- **UI พึ่งพา data-access layer เท่านั้น** (`apps/web/src/data/`) — ไม่เรียก `supabase` ตรงจาก component ; เพิ่ม feature ใหม่ให้เพิ่ม method ใน interface (`api.ts`) แล้ว implement ทั้ง mock + supabase
 
 ---
 

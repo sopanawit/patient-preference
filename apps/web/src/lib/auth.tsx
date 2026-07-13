@@ -6,20 +6,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
-import type { StaffRole } from "@/types/database";
-
-export interface StaffProfile {
-  id: string;
-  full_name: string;
-  role: StaffRole;
-  is_active: boolean;
-  department_id: string | null;
-}
+import { db, type AuthSnapshot, type StaffProfile } from "@/data";
 
 interface AuthState {
-  session: Session | null;
+  userId: string | null;
   /** โปรไฟล์ staff ของผู้ใช้ปัจจุบัน (null = ยังไม่มีบัญชี/ยังไม่อนุมัติ) */
   profile: StaffProfile | null;
   loading: boolean;
@@ -29,58 +19,35 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
-async function fetchProfile(userId: string): Promise<StaffProfile | null> {
-  const { data } = await supabase
-    .from("staff")
-    .select("id, full_name, role, is_active, department_id")
-    .eq("id", userId)
-    .maybeSingle();
-  return data ?? null;
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<StaffProfile | null>(null);
+  const [snap, setSnap] = useState<AuthSnapshot>({ userId: null, profile: null });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-
-    async function load(nextSession: Session | null) {
+    db.auth.getCurrent().then((s) => {
       if (!active) return;
-      setSession(nextSession);
-      if (nextSession?.user) {
-        setProfile(await fetchProfile(nextSession.user.id));
-      } else {
-        setProfile(null);
-      }
-      if (active) setLoading(false);
-    }
-
-    supabase.auth.getSession().then(({ data }) => load(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      void load(next);
+      setSnap(s);
+      setLoading(false);
     });
-
+    const unsub = db.auth.onChange((s) => {
+      if (active) setSnap(s);
+    });
     return () => {
       active = false;
-      sub.subscription.unsubscribe();
+      unsub();
     };
   }, []);
 
   const value = useMemo<AuthState>(
     () => ({
-      session,
-      profile,
+      userId: snap.userId,
+      profile: snap.profile,
       loading,
-      signOut: async () => {
-        await supabase.auth.signOut();
-      },
-      refreshProfile: async () => {
-        if (session?.user) setProfile(await fetchProfile(session.user.id));
-      },
+      signOut: () => db.auth.signOut(),
+      refreshProfile: async () => setSnap(await db.auth.getCurrent()),
     }),
-    [session, profile, loading],
+    [snap, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

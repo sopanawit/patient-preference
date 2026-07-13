@@ -16,6 +16,7 @@ import { SearchPage } from "@/features/search/SearchPage";
 import { ReviewPage } from "@/features/review/ReviewPage";
 import { AdminPage } from "@/features/admin/AdminPage";
 import { AccessRequestsPage } from "@/features/admin/access/AccessRequestsPage";
+import { DepartmentsPage } from "@/features/admin/departments/DepartmentsPage";
 import { LineSettingsPage } from "@/features/admin/LineSettingsPage";
 import type { StaffRole } from "@/types/database";
 
@@ -122,6 +123,14 @@ export function App() {
               element={
                 <RequireRole allow={ADMIN_ONLY}>
                   <LineSettingsPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/departments"
+              element={
+                <RequireRole allow={ADMIN_ONLY}>
+                  <DepartmentsPage />
                 </RequireRole>
               }
             />

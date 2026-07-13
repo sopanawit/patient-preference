@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { db, DATA_BACKEND } from "@/data";
 
 /**
  * หน้า login สำหรับ admin (email/password ผ่าน Supabase Auth)
@@ -17,10 +17,7 @@ export function LoginPage() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    const { error: signInError } = await db.auth.signIn(email.trim(), password);
     setSubmitting(false);
     if (signInError) {
       setError("เข้าสู่ระบบไม่สำเร็จ — ตรวจสอบอีเมลและรหัสผ่าน");
@@ -39,6 +36,14 @@ export function LoginPage() {
         <p className="mt-1 text-sm text-slate-500">
           สำหรับผู้ดูแลระบบ (admin)
         </p>
+
+        {DATA_BACKEND === "mock" && (
+          <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">
+            โหมดเดโม (mock): ล็อกอินด้วยอีเมลอะไรก็ได้ →
+            เข้าเป็น admin ; หรือใช้ <code>cx@hospital.local</code> /
+            <code> nurse@hospital.local</code> เพื่อดูมุมมองบทบาทอื่น
+          </p>
+        )}
 
         <label className="mt-6 block text-sm font-medium text-slate-700">
           อีเมล

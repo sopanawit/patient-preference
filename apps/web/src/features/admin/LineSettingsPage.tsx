@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/data";
 import { useAuth } from "@/lib/auth";
 import { APP_SETTING_KEYS } from "@patient-preference/shared";
 
@@ -20,13 +20,9 @@ export function LineSettingsPage() {
 
   useEffect(() => {
     let active = true;
-    supabase
-      .from("app_settings")
-      .select("key, value")
-      .then(({ data }) => {
-        if (active)
-          setValues(Object.fromEntries((data ?? []).map((r) => [r.key, r.value])));
-      });
+    db.settings.getLineConfig().then((v) => {
+      if (active) setValues(v);
+    });
     return () => {
       active = false;
     };
@@ -35,14 +31,7 @@ export function LineSettingsPage() {
   async function save() {
     if (!profile) return;
     setStatus("saving");
-    await Promise.all(
-      FIELDS.map((f) =>
-        supabase
-          .from("app_settings")
-          .update({ value: values[f.key] ?? "", updated_by: profile.id })
-          .eq("key", f.key),
-      ),
-    );
+    await db.settings.saveLineConfig(values, profile.id);
     setStatus("saved");
   }
 

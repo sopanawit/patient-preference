@@ -19,7 +19,7 @@ function CenteredCard({ children }: { children: ReactNode }) {
  *   - โปรไฟล์ถูกระงับ (is_active=false) → ถูกระงับสิทธิ์
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { session, profile, loading, signOut } = useAuth();
+  const { userId, profile, loading, signOut } = useAuth();
 
   if (loading) {
     return (
@@ -29,7 +29,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!session) return <Navigate to="/login" replace />;
+  if (!userId) return <Navigate to="/login" replace />;
 
   if (!profile) {
     return (

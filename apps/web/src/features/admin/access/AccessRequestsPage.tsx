@@ -1,51 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { db, type AccessRequest, type Department, type Staff } from "@/data";
 import { useAuth } from "@/lib/auth";
-import { recordAudit } from "@/lib/audit";
 import { ASSIGNABLE_ROLES, ROLE_LABELS } from "@patient-preference/shared";
 import type { StaffRole } from "@/types/database";
-
-interface RequestRow {
-  id: string;
-  full_name: string;
-  note: string | null;
-  created_at: string;
-  department_id: string | null;
-}
-interface StaffRow {
-  id: string;
-  full_name: string;
-  role: StaffRole;
-  is_active: boolean;
-  department_id: string | null;
-}
 
 export function AccessRequestsPage() {
   const { profile } = useAuth();
   const [depts, setDepts] = useState<Record<string, string>>({});
-  const [requests, setRequests] = useState<RequestRow[]>([]);
-  const [staff, setStaff] = useState<StaffRow[]>([]);
+  const [requests, setRequests] = useState<AccessRequest[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [chosenRole, setChosenRole] = useState<Record<string, StaffRole>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [deptRes, reqRes, staffRes] = await Promise.all([
-      supabase.from("departments").select("id, name_th"),
-      supabase
-        .from("access_requests")
-        .select("id, full_name, note, created_at, department_id")
-        .eq("status", "pending")
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("staff")
-        .select("id, full_name, role, is_active, department_id")
-        .order("full_name", { ascending: true }),
+    const [deptList, reqs, staffList] = await Promise.all([
+      db.departments.listAll(),
+      db.access.listPendingRequests(),
+      db.access.listStaff(),
     ]);
     setDepts(
-      Object.fromEntries((deptRes.data ?? []).map((d) => [d.id, d.name_th])),
+      Object.fromEntries((deptList as Department[]).map((d) => [d.id, d.name_th])),
     );
-    setRequests(reqRes.data ?? []);
-    setStaff(staffRes.data ?? []);
+    setRequests(reqs);
+    setStaff(staffList);
   }, []);
 
   useEffect(() => {
@@ -54,71 +31,31 @@ export function AccessRequestsPage() {
 
   const deptName = (id: string | null) => (id ? (depts[id] ?? "—") : "—");
 
-  async function approve(req: RequestRow) {
+  async function approve(req: AccessRequest) {
     if (!profile) return;
-    const role = chosenRole[req.id] ?? "cs";
     setBusy(req.id);
-    await supabase
-      .from("access_requests")
-      .update({
-        status: "approved",
-        approved_role: role,
-        reviewed_by: profile.id,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq("id", req.id);
-    await recordAudit(profile.id, "confirm", "access_request", req.id, {
-      approved_role: role,
-      full_name: req.full_name,
-    });
+    await db.access.approve(req.id, chosenRole[req.id] ?? "cs", profile.id);
     setBusy(null);
     await load();
   }
-
-  async function reject(req: RequestRow) {
+  async function reject(req: AccessRequest) {
     if (!profile) return;
     setBusy(req.id);
-    await supabase
-      .from("access_requests")
-      .update({
-        status: "rejected",
-        reviewed_by: profile.id,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq("id", req.id);
-    await recordAudit(profile.id, "update", "access_request", req.id, {
-      status: "rejected",
-    });
+    await db.access.reject(req.id, profile.id);
     setBusy(null);
     await load();
   }
-
-  async function setActive(row: StaffRow, isActive: boolean) {
+  async function setActive(row: Staff, isActive: boolean) {
     if (!profile) return;
     setBusy(row.id);
-    await supabase
-      .from("staff")
-      .update({ is_active: isActive })
-      .eq("id", row.id);
-    await recordAudit(
-      profile.id,
-      isActive ? "update" : "revoke",
-      "staff",
-      row.id,
-      { is_active: isActive },
-    );
+    await db.access.setActive(row.id, isActive, profile.id);
     setBusy(null);
     await load();
   }
-
-  async function changeRole(row: StaffRow, role: StaffRole) {
+  async function changeRole(row: Staff, role: StaffRole) {
     if (!profile || role === row.role) return;
     setBusy(row.id);
-    await supabase.from("staff").update({ role }).eq("id", row.id);
-    await recordAudit(profile.id, "update", "staff", row.id, {
-      role_from: row.role,
-      role_to: role,
-    });
+    await db.access.changeRole(row.id, role, profile.id);
     setBusy(null);
     await load();
   }
@@ -127,7 +64,6 @@ export function AccessRequestsPage() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <h1 className="text-xl font-semibold text-slate-800">จัดการสิทธิ์เข้าใช้งาน</h1>
 
-      {/* คิวคำขอรออนุมัติ */}
       <section className="mt-6">
         <h2 className="text-sm font-semibold text-slate-700">
           คำขอรออนุมัติ ({requests.length})
@@ -183,70 +119,63 @@ export function AccessRequestsPage() {
         </div>
       </section>
 
-      {/* รายชื่อบัญชีผู้ใช้ */}
       <section className="mt-8">
         <h2 className="text-sm font-semibold text-slate-700">
           บัญชีผู้ใช้ ({staff.length})
         </h2>
         <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {staff.length === 0 ? (
-            <p className="px-5 py-6 text-sm text-slate-400">ยังไม่มีบัญชีผู้ใช้</p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {staff.map((row) => (
-                <li key={row.id} className="flex flex-wrap items-center gap-3 px-5 py-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-slate-800">
-                      {row.full_name}
-                      {!row.is_active && (
-                        <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600">
-                          ถูกระงับ
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      แผนก: {deptName(row.department_id)}
-                    </p>
-                  </div>
-                  <select
-                    value={row.role}
-                    disabled={row.role === "admin"}
-                    onChange={(e) =>
-                      void changeRole(row, e.target.value as StaffRole)
-                    }
-                    className="rounded-md border border-slate-300 px-2 py-1.5 text-sm disabled:bg-slate-50 disabled:text-slate-400"
-                  >
-                    {(row.role === "admin"
-                      ? (["admin"] as StaffRole[])
-                      : [...ASSIGNABLE_ROLES]
-                    ).map((r) => (
-                      <option key={r} value={r}>
-                        {ROLE_LABELS[r]}
-                      </option>
-                    ))}
-                  </select>
-                  {row.role !== "admin" &&
-                    (row.is_active ? (
-                      <button
-                        disabled={busy === row.id}
-                        onClick={() => void setActive(row, false)}
-                        className="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
-                      >
-                        ระงับสิทธิ์
-                      </button>
-                    ) : (
-                      <button
-                        disabled={busy === row.id}
-                        onClick={() => void setActive(row, true)}
-                        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-60"
-                      >
-                        คืนสิทธิ์
-                      </button>
-                    ))}
-                </li>
-              ))}
-            </ul>
-          )}
+          <ul className="divide-y divide-slate-100">
+            {staff.map((row) => (
+              <li key={row.id} className="flex flex-wrap items-center gap-3 px-5 py-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-slate-800">
+                    {row.full_name}
+                    {!row.is_active && (
+                      <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600">
+                        ถูกระงับ
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    แผนก: {deptName(row.department_id)}
+                  </p>
+                </div>
+                <select
+                  value={row.role}
+                  disabled={row.role === "admin"}
+                  onChange={(e) => void changeRole(row, e.target.value as StaffRole)}
+                  className="rounded-md border border-slate-300 px-2 py-1.5 text-sm disabled:bg-slate-50 disabled:text-slate-400"
+                >
+                  {(row.role === "admin"
+                    ? (["admin"] as StaffRole[])
+                    : [...ASSIGNABLE_ROLES]
+                  ).map((r) => (
+                    <option key={r} value={r}>
+                      {ROLE_LABELS[r]}
+                    </option>
+                  ))}
+                </select>
+                {row.role !== "admin" &&
+                  (row.is_active ? (
+                    <button
+                      disabled={busy === row.id}
+                      onClick={() => void setActive(row, false)}
+                      className="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    >
+                      ระงับสิทธิ์
+                    </button>
+                  ) : (
+                    <button
+                      disabled={busy === row.id}
+                      onClick={() => void setActive(row, true)}
+                      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                    >
+                      คืนสิทธิ์
+                    </button>
+                  ))}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
     </div>

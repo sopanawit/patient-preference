@@ -14,8 +14,7 @@ const LINKS = [
   {
     to: "/admin/departments",
     title: "จัดการหมวดแผนก",
-    desc: "เพิ่ม/ปิดใช้งานแผนกปลายทาง (Phase 2)",
-    disabled: true,
+    desc: "เพิ่ม/ปิดใช้งานแผนกปลายทางที่ AI ใช้จัด action",
   },
 ];
 
@@ -25,25 +24,14 @@ export function AdminPage() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-xl font-semibold text-slate-800">ตั้งค่า (Admin)</h1>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        {LINKS.map((link) => {
-          const card = (
-            <div
-              className={`h-full rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${
-                link.disabled ? "opacity-50" : "transition-shadow hover:shadow"
-              }`}
-            >
+        {LINKS.map((link) => (
+          <Link key={link.to} to={link.to}>
+            <div className="h-full rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow">
               <p className="font-medium text-slate-800">{link.title}</p>
               <p className="mt-1 text-sm text-slate-500">{link.desc}</p>
             </div>
-          );
-          return link.disabled ? (
-            <div key={link.to}>{card}</div>
-          ) : (
-            <Link key={link.to} to={link.to}>
-              {card}
-            </Link>
-          );
-        })}
+          </Link>
+        ))}
       </div>
     </div>
   );
