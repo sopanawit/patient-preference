@@ -14,6 +14,27 @@ export const ADMISSION_STATUSES = ["active", "discharged"] as const;
 /** สถานะผลการจัดหมวด (ตรงกับ enum `analysis_status`) */
 export const ANALYSIS_STATUSES = ["pending_review", "confirmed"] as const;
 
+/** สถานะคำขอเข้าใช้งาน (ตรงกับ enum `request_status`) */
+export const REQUEST_STATUSES = ["pending", "approved", "rejected"] as const;
+
+/** role ที่ admin กำหนดให้ผู้ขอผ่าน LINE ได้ (ไม่รวม admin) */
+export const ASSIGNABLE_ROLES = ["cs", "nurse", "cx_manager"] as const;
+
+/** key ของค่าตั้งค่าใน app_settings (LINE config) */
+export const APP_SETTING_KEYS = [
+  "line_liff_id",
+  "line_channel_id",
+  "line_channel_secret",
+] as const;
+
+/** label ภาษาไทยของแต่ละ role */
+export const ROLE_LABELS: Record<string, string> = {
+  cs: "Customer Service",
+  nurse: "พยาบาล",
+  cx_manager: "CX Manager",
+  admin: "ผู้ดูแลระบบ",
+};
+
 /** ที่มาของความต้องการ (ช่อง likes / dislikes) */
 export const PREFERENCE_SOURCES = ["like", "dislike"] as const;
 

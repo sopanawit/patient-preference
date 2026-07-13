@@ -54,6 +54,7 @@ bun run dev
 | Phase | ขอบเขต | สถานะ |
 |-------|--------|:-----:|
 | 0 — Scaffold | monorepo, Bun+React+Tailwind, schema + RLS + seed | ✅ scaffolded |
+| 0.5 — Auth/Access | admin login, dashboard, request→approve→revoke, LINE config | ✅ admin-first (LINE flow ภายหลัง) |
 | 1 — Core CRUD | patients + admissions, หน้ากรอก, ค้นด้วย HN | ⬜ |
 | 2 — AI | Edge Function `classify-preferences` + Opus 4.8 | ⬜ |
 | 3 — Review workflow | คิวรอตรวจ CX + state machine | ⬜ |

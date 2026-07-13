@@ -66,6 +66,7 @@
 - **Analysis:** ผลที่ AI จัดหมวดความต้องการเป็น action รายแผนก
 - **แผนกปลายทาง (Department):** ปลายทางที่ AI จัด action ให้ ตั้งค่าได้โดย admin
 - **สถานะ record:** `pending_review` (รอ CX ตรวจ) / `confirmed` (ยืนยันแล้ว เผยแพร่ได้)
+- **คำขอเข้าใช้งาน (Access Request):** คำขอสิทธิ์จาก staff ที่เข้าครั้งแรกผ่าน LINE — สถานะ `pending`/`approved`/`rejected` รอ admin อนุมัติ (ดูข้อ 5.1)
 
 ---
 
@@ -85,6 +86,21 @@
 
 > **สมมติฐานที่ต้องยืนยัน:** ตอนนี้กำหนด `admin` เป็นบทบาทแยกสำหรับงานตั้งค่า (หมวด/ผู้ใช้) — จะให้ CX manager เป็น admin ไปด้วยเลย หรือแยกเป็น IT ก็ปรับได้
 
+### 5.1 Authentication & Access Lifecycle
+
+มี **2 ทางเข้าระบบ** ใช้ identity เดียวกัน (Supabase Auth):
+
+1. **Web login (admin):** email/password — สำหรับผู้ดูแลระบบเข้า dashboard และจัดการสิทธิ์
+2. **LINE LIFF (staff):** เข้าจากเมนูใน LINE — ครั้งแรกเป็นการ **request access** (กรอกชื่อ + แผนก) เข้าคิวรออนุมัติ; ครั้งถัดไปด้วย LINE เดิมเข้าได้ทันทีเมื่ออนุมัติแล้ว
+
+**วงจรสิทธิ์:** `request (pending)` → admin **approve** (กำหนด role) → บัญชีใช้งานได้ → admin **revoke** ได้ทุกเมื่อ (`staff.is_active=false`)
+- คำขอเก็บใน `access_requests` (คิว — ไม่ผูก `auth.users`) แยกจาก `staff` (บัญชีจริง — ผูก `auth.users`)
+- role ของผู้ขอผ่าน LINE **admin เป็นผู้กำหนดตอน approve** (ได้เฉพาะ cs/nurse/cx_manager — ไม่ใช่ admin)
+- staff มี `department_id` (ต้นสังกัด) ที่ **ใช้ตาราง `departments` เดิมซ้ำ**
+
+> **หมายเหตุ (แทนที่แนวเดิม):** เดิมข้อกำหนดคือ "admin สร้างบัญชี / ปิด signup" — ปรับเป็นโมเดล self-service request → approve ข้างต้น
+> **สถานะ implement:** ฝั่ง admin (login, dashboard, จัดการสิทธิ์, ตั้งค่า LINE) ทำแล้ว ; ตัว LINE login flow จริง (LIFF + verify token + mint session) **ทำในเฟสถัดไป** โดยเก็บ LINE config ไว้ใน `app_settings` (admin แก้ได้) เพื่อเสียบเชื่อมภายหลัง
+
 ---
 
 ## 6. Data Model (Supabase / Postgres)
@@ -100,7 +116,32 @@ create table staff (
   id uuid primary key references auth.users(id),
   full_name text not null,
   role staff_role not null,
-  is_active boolean not null default true
+  is_active boolean not null default true,   -- revoke สิทธิ์ = false
+  line_user_id text unique,                  -- ผูกบัญชี LINE (null สำหรับ admin ที่ login ด้วย email)
+  department_id uuid references departments(id)  -- ต้นสังกัด (ใช้ตาราง departments ซ้ำ)
+);
+
+-- คิวคำขอเข้าใช้งาน (ยื่นผ่าน LINE — ไม่ผูก auth.users, materialize เป็น staff เมื่อ login จริง)
+create type request_status as enum ('pending', 'approved', 'rejected');
+create table access_requests (
+  id uuid primary key default gen_random_uuid(),
+  line_user_id text unique,
+  full_name text not null,
+  department_id uuid references departments(id),
+  note text,
+  status request_status not null default 'pending',
+  approved_role staff_role,                  -- role ที่ admin เลือกตอน approve
+  reviewed_by uuid references staff(id),
+  reviewed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- ค่าตั้งค่าระดับแอป (admin แก้ได้) — เก็บ LINE config (liff_id, channel_id, channel_secret)
+create table app_settings (
+  key text primary key,
+  value text not null default '',
+  updated_by uuid references staff(id),
+  updated_at timestamptz not null default now()
 );
 
 -- คนไข้ (HN เป็น business key) + ความชอบระดับบุคคล (ถาวร)
@@ -186,6 +227,8 @@ create table audit_log (
 - `analysis_assignments` และ `preference_analysis` ที่ `status = 'confirmed'` = อ่านได้ทุกบทบาท
 - ที่ `status = 'pending_review'` = อ่าน/แก้/ยืนยันได้เฉพาะ `cx_manager`, `admin`
 - `departments`, `staff` = จัดการได้เฉพาะ `admin`
+- `access_requests`, `app_settings` = อ่าน/จัดการได้เฉพาะ `admin` (insert คำขอจริงทำผ่าน service role ใน Edge Function LINE)
+- `audit_log` = เจ้าหน้าที่ที่ active insert ในนามตัวเองได้ (`actor = auth.uid()`) ; อ่านได้เฉพาะ reviewer
 
 ---
 
@@ -300,10 +343,12 @@ create table audit_log (
 
 ## 11. หน้าจอหลัก (Screens)
 
-1. **หน้ากรอกข้อมูล** — HN, ชื่อ-สกุล, ห้องพัก, likes, dislikes (+ hint non-medical) ; HN เดิม → auto-fill ความชอบ
-2. **หน้าค้นด้วย HN** — แสดงชื่อ/ห้อง/ความชอบ + action รายแผนก (ตาม 7.5)
-3. **คิวรอตรวจ (CX)** — รายการ pending + ตัวแก้ action + ปุ่มยืนยัน
-4. **ตั้งค่า (Admin)** — จัดการหมวดแผนก + บัญชีผู้ใช้/บทบาท
+0. **Login (admin)** — email/password ; staff เข้าผ่าน LINE LIFF (ทำภายหลัง)
+1. **Dashboard (ภาพรวม)** — การ์ดสรุป: คนไข้, กำลังแอดมิท, รอ CX ตรวจ, คำขอเข้าใช้งานรออนุมัติ
+2. **หน้ากรอกข้อมูล** — HN, ชื่อ-สกุล, ห้องพัก, likes, dislikes (+ hint non-medical) ; HN เดิม → auto-fill ความชอบ
+3. **หน้าค้นด้วย HN** — แสดงชื่อ/ห้อง/ความชอบ + action รายแผนก (ตาม 7.5)
+4. **คิวรอตรวจ (CX)** — รายการ pending + ตัวแก้ action + ปุ่มยืนยัน
+5. **ตั้งค่า (Admin)** — จัดการสิทธิ์ (อนุมัติ/ระงับ), ตั้งค่า LINE, จัดการหมวดแผนก + บัญชีผู้ใช้/บทบาท
 
 ---
 
