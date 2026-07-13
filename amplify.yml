@@ -16,6 +16,8 @@ frontend:
         - export BUN_INSTALL="$HOME/.bun"
         - export PATH="$BUN_INSTALL/bin:$PATH"
         - bun --version
+        # ล้าง node_modules เก่าจาก cache ก่อน (กัน layout ค้างที่ node resolve ไม่เจอ)
+        - rm -rf node_modules apps/web/node_modules packages/shared/node_modules
         # ติดตั้งแบบ deterministic ตาม bun.lock ที่ commit ไว้
         # (--frozen-lockfile กัน dependency ที่ resolve ไม่ตรงกันระหว่าง local/CI)
         - bun install --frozen-lockfile
