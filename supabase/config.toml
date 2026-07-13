@@ -1,0 +1,34 @@
+# Supabase local development config
+# ดู https://supabase.com/docs/guides/cli/config
+
+project_id = "patient-preference"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+# frontend origin สำหรับ redirect ตอน dev
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+jwt_expiry = 3600
+enable_signup = false   # สร้างบัญชีผ่าน admin เท่านั้น (ดู CLAUDE.md ข้อ 5)
+
+[auth.email]
+enable_confirmations = false
+
+# Edge Function เรียก Opus 4.8 — verify_jwt เพื่อให้เรียกได้เฉพาะผู้ใช้ที่ login
+[functions.classify-preferences]
+verify_jwt = true

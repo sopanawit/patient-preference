@@ -1,0 +1,21 @@
+{
+  "name": "patient-preference",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ระบบบันทึกความต้องการพิเศษ (non-medical) ของคนไข้ก่อนเข้าแอดมิท",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd apps/web dev",
+    "build": "bun run --cwd apps/web build",
+    "typecheck": "bun run --cwd apps/web typecheck",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "functions:serve": "supabase functions serve classify-preferences --env-file supabase/.env"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}
