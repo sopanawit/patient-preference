@@ -1,0 +1,38 @@
+# AWS Amplify Hosting — build config
+# โปรเจกต์เป็น Bun monorepo (workspaces): frontend เป็น Vite + React SPA ที่ apps/web
+# build ออกมาเป็น static assets ที่ apps/web/dist
+#
+# ต้องตั้ง environment variables เหล่านี้ใน Amplify Console (App settings > Environment variables):
+#   VITE_SUPABASE_URL       — URL ของ Supabase project
+#   VITE_SUPABASE_ANON_KEY  — anon key เท่านั้น (ห้ามใส่ service_role key)
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # ติดตั้ง Bun (Amplify image ไม่มีมาให้)
+        - curl -fsSL https://bun.sh/install | bash
+        - export BUN_INSTALL="$HOME/.bun"
+        - export PATH="$BUN_INSTALL/bin:$PATH"
+        - bun --version
+        # ติดตั้ง dependencies ของทุก workspace จาก root
+        - bun install
+        # เขียนค่า env จาก Amplify Console ลง .env ให้ Vite อ่านตอน build
+        - echo "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" >> apps/web/.env
+        - echo "VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY" >> apps/web/.env
+    build:
+      commands:
+        - export PATH="$HOME/.bun/bin:$PATH"
+        # รัน typecheck + vite build (script "build" ที่ root -> apps/web)
+        - bun run build
+  artifacts:
+    # Vite output อยู่ที่ apps/web/dist
+    baseDirectory: apps/web/dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - apps/web/node_modules/**/*
+      - packages/shared/node_modules/**/*
+      - $HOME/.bun/**/*
