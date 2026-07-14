@@ -78,11 +78,11 @@ export function SearchPage() {
       {result && (
         <div className="mt-6 space-y-4">
           <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold text-slate-800">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <h2 className="min-w-0 break-words text-lg font-semibold text-slate-800">
                 {result.patient.full_name}
               </h2>
-              <span className="text-sm text-slate-500">
+              <span className="min-w-0 break-words text-sm text-slate-500">
                 ห้อง: {result.currentRoom ?? "—"}
               </span>
             </div>

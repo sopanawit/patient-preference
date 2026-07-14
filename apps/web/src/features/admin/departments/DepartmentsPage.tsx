@@ -56,7 +56,7 @@ export function DepartmentsPage() {
         <ul className="divide-y divide-slate-100">
           {rows.map((row) => (
             <li key={row.id} className="flex items-center gap-3 px-5 py-3">
-              <div className="flex-1">
+              <div className="min-w-0 flex-1 break-words">
                 <p className="font-medium text-slate-800">{row.name_th}</p>
                 <p className="text-xs text-slate-400">{row.code}</p>
               </div>

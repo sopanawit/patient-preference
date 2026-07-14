@@ -74,7 +74,7 @@ export function ReviewPage() {
               className="rounded-xl border border-slate-200 bg-white p-5"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-semibold text-slate-800">
+                <h2 className="min-w-0 break-words font-semibold text-slate-800">
                   {names[a.hn]}{" "}
                   <span className="text-sm font-normal text-slate-400">
                     ({a.hn})
