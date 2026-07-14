@@ -53,19 +53,21 @@ export function DashboardPage() {
         {cards.map((card) => {
           const value = data ? data[card.key] : null;
           const body = (
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow">
-              <p className="text-sm text-slate-500">{card.label}</p>
+            <div className="h-full rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow">
+              <p className="break-words text-sm text-slate-500">{card.label}</p>
               <p className={`mt-2 text-3xl font-semibold ${card.accent}`}>
                 {value === null ? "—" : value}
               </p>
             </div>
           );
           return card.to ? (
-            <Link key={card.key} to={card.to}>
+            <Link key={card.key} to={card.to} className="block min-w-0">
               {body}
             </Link>
           ) : (
-            <div key={card.key}>{body}</div>
+            <div key={card.key} className="min-w-0">
+              {body}
+            </div>
           );
         })}
       </div>

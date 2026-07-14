@@ -87,15 +87,15 @@ export function SearchPage() {
               </span>
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-medium text-slate-500">สิ่งที่ชอบ</p>
-                <p className="mt-1 whitespace-pre-line text-sm text-slate-700">
+                <p className="mt-1 whitespace-pre-line break-words text-sm text-slate-700">
                   {result.patient.likes_text || "—"}
                 </p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-medium text-slate-500">สิ่งที่ไม่ชอบ</p>
-                <p className="mt-1 whitespace-pre-line text-sm text-slate-700">
+                <p className="mt-1 whitespace-pre-line break-words text-sm text-slate-700">
                   {result.patient.dislikes_text || "—"}
                 </p>
               </div>

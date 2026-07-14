@@ -4,12 +4,16 @@
 
 @layer base {
   /* กันเนื้อหาล้นแนวนอนบนมือถือ (โดยเฉพาะข้อความไทยที่ไม่มีเว้นวรรค
-     ทำให้เบราว์เซอร์หาจุดตัดคำไม่ได้ → ข้อความยาวจะดันจอกว้างเกิน) */
-  html {
+     ทำให้บางเบราว์เซอร์ — เช่น Safari บน iOS — หาจุดตัดคำไม่ได้
+     ข้อความ/การ์ดยาวจึงดันความกว้างจนเลยจอ)
+     overflow-wrap: anywhere ช่วยให้คำนวณความกว้างขั้นต่ำ (min-content)
+     หดได้จริงในทุกเบราว์เซอร์ ต่างจาก break-word */
+  html,
+  body {
     overflow-x: hidden;
   }
   body {
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
     word-break: break-word;
   }
 }
