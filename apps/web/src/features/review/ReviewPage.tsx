@@ -73,7 +73,7 @@ export function ReviewPage() {
               key={a.id}
               className="rounded-xl border border-slate-200 bg-white p-5"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="font-semibold text-slate-800">
                   {names[a.hn]}{" "}
                   <span className="text-sm font-normal text-slate-400">
@@ -107,11 +107,14 @@ export function ReviewPage() {
 
                     <div className="mt-2 space-y-2">
                       {item.assignments.map((asg) => (
-                        <div key={asg.id} className="flex flex-wrap items-center gap-2">
+                        <div
+                          key={asg.id}
+                          className="flex flex-wrap items-center gap-2"
+                        >
                           <select
                             defaultValue={asg.department_id}
                             onChange={(e) => void moveDept(asg.id, e.target.value)}
-                            className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm sm:w-auto"
                           >
                             {depts.map((d) => (
                               <option key={d.id} value={d.id}>
@@ -122,11 +125,11 @@ export function ReviewPage() {
                           <input
                             defaultValue={asg.action_text}
                             onBlur={(e) => void editAction(asg.id, e.target.value)}
-                            className={`${field} flex-1`}
+                            className={`${field} w-full sm:flex-1`}
                           />
                           <button
                             onClick={() => void remove(asg.id)}
-                            className="rounded-md border border-red-200 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50"
+                            className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
                           >
                             ลบ
                           </button>
