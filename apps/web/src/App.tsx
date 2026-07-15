@@ -51,7 +51,7 @@ function Layout() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-5xl px-4">
           <div className="flex h-14 items-center gap-4">
-            <span className="flex-1 truncate font-semibold text-slate-800">
+            <span className="min-w-0 flex-1 truncate font-semibold text-slate-800">
               ระบบความต้องการพิเศษของคนไข้
             </span>
 

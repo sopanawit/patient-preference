@@ -16,4 +16,10 @@
     overflow-wrap: anywhere;
     word-break: break-word;
   }
+  /* ตาข่ายกันเหนียว: iOS Safari มักไม่เคารพ overflow-x:hidden บน html/body
+     แต่เคารพบน element ปกติ — ครอบ #root ไว้กัน element ที่กว้างเกินดันจอ */
+  #root {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
 }

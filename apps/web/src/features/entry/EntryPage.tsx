@@ -79,7 +79,7 @@ export function EntryPage() {
         className="mt-6 space-y-4 rounded-xl border border-slate-200 bg-white p-6"
       >
         <div className="flex items-end gap-2">
-          <label className="flex-1 text-sm font-medium text-slate-700">
+          <label className="min-w-0 flex-1 text-sm font-medium text-slate-700">
             HN
             <input
               value={form.hn}

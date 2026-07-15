@@ -93,7 +93,7 @@ export function DepartmentsPage() {
             placeholder="เช่น pharmacy"
           />
         </label>
-        <label className="flex-1 text-sm font-medium text-slate-700">
+        <label className="min-w-0 flex-1 text-sm font-medium text-slate-700">
           ชื่อแผนก (ไทย)
           <input
             value={nameTh}
