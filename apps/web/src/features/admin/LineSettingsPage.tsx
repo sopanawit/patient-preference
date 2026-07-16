@@ -53,7 +53,7 @@ export function LineSettingsPage() {
                 setValues((v) => ({ ...v, [f.key]: e.target.value }));
                 setStatus("idle");
               }}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
               autoComplete="off"
             />
           </label>
@@ -63,7 +63,7 @@ export function LineSettingsPage() {
           <button
             onClick={() => void save()}
             disabled={status === "saving"}
-            className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60"
+            className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
           >
             {status === "saving" ? "กำลังบันทึก…" : "บันทึก"}
           </button>

@@ -11,7 +11,7 @@ export function PlaceholderPage({ title, phase, description }: PlaceholderPagePr
       <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-semibold text-slate-800">{title}</h1>
-          <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-700">
+          <span className="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-700">
             {phase}
           </span>
         </div>

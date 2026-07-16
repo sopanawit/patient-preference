@@ -22,7 +22,7 @@ const CARDS: {
     key: "pendingRequests",
     label: "คำขอเข้าใช้งานรออนุมัติ",
     to: "/admin/access",
-    accent: "text-sky-600",
+    accent: "text-brand-700",
     adminOnly: true,
   },
 ];

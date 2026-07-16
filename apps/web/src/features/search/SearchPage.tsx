@@ -47,7 +47,7 @@ export function SearchPage() {
   }, [analysis, showActions, deptName]);
 
   const field =
-    "w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500";
+    "w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -63,7 +63,7 @@ export function SearchPage() {
         />
         <button
           onClick={() => void search()}
-          className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+          className="shrink-0 whitespace-nowrap rounded-md bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-600"
         >
           ค้นหา
         </button>
@@ -113,7 +113,7 @@ export function SearchPage() {
                   key={g.deptId}
                   className="rounded-xl border border-slate-200 bg-white p-4"
                 >
-                  <p className="font-medium text-sky-700">{g.name}</p>
+                  <p className="font-medium text-brand-700">{g.name}</p>
                   <ul className="mt-2 space-y-1.5">
                     {g.actions.map((a, i) => (
                       <li key={i} className="text-sm text-slate-700">

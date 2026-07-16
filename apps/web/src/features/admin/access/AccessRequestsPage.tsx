@@ -108,7 +108,7 @@ export function AccessRequestsPage() {
                   <button
                     disabled={busy === req.id}
                     onClick={() => void reject(req)}
-                    className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                    className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-50 disabled:opacity-60"
                   >
                     ปฏิเสธ
                   </button>
@@ -144,7 +144,7 @@ export function AccessRequestsPage() {
                   value={row.role}
                   disabled={row.role === "admin"}
                   onChange={(e) => void changeRole(row, e.target.value as StaffRole)}
-                  className="rounded-md border border-slate-300 px-2 py-1.5 text-sm disabled:bg-slate-50 disabled:text-slate-400"
+                  className="rounded-md border border-slate-300 px-2 py-1.5 text-sm disabled:bg-brand-50 disabled:text-slate-400"
                 >
                   {(row.role === "admin"
                     ? (["admin"] as StaffRole[])
@@ -168,7 +168,7 @@ export function AccessRequestsPage() {
                     <button
                       disabled={busy === row.id}
                       onClick={() => void setActive(row, true)}
-                      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-50 disabled:opacity-60"
                     >
                       คืนสิทธิ์
                     </button>

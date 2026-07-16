@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 
 function CenteredCard({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4">
       <div className="max-w-md rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         {children}
       </div>
@@ -40,7 +40,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
         </p>
         <button
           onClick={() => void signOut()}
-          className="mt-6 text-sm text-sky-600 hover:underline"
+          className="mt-6 text-sm text-brand-700 hover:underline"
         >
           ออกจากระบบ
         </button>
@@ -59,7 +59,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
         </p>
         <button
           onClick={() => void signOut()}
-          className="mt-6 text-sm text-sky-600 hover:underline"
+          className="mt-6 text-sm text-brand-700 hover:underline"
         >
           ออกจากระบบ
         </button>

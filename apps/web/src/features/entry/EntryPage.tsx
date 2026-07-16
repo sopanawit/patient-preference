@@ -68,7 +68,7 @@ export function EntryPage() {
   }
 
   const field =
-    "mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500";
+    "mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -91,12 +91,12 @@ export function EntryPage() {
           <button
             type="button"
             onClick={() => void lookup()}
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-brand-50"
           >
             ค้นข้อมูลเดิม
           </button>
         </div>
-        {lookupMsg && <p className="text-xs text-sky-600">{lookupMsg}</p>}
+        {lookupMsg && <p className="text-xs text-brand-700">{lookupMsg}</p>}
 
         <label className="block text-sm font-medium text-slate-700">
           ชื่อ-สกุล
@@ -144,7 +144,7 @@ export function EntryPage() {
           <button
             type="submit"
             disabled={status === "saving"}
-            className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60"
+            className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
           >
             {status === "saving" ? "กำลังบันทึก…" : "บันทึก"}
           </button>

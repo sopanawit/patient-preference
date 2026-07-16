@@ -46,7 +46,7 @@ export function DepartmentsPage() {
   }
 
   const field =
-    "rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500";
+    "rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -71,7 +71,7 @@ export function DepartmentsPage() {
               </span>
               <button
                 onClick={() => void toggle(row)}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-50"
               >
                 {row.is_active ? "ปิดใช้งาน" : "เปิดใช้งาน"}
               </button>
@@ -105,7 +105,7 @@ export function DepartmentsPage() {
         <button
           type="submit"
           disabled={busy}
-          className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60"
+          className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
         >
           เพิ่มแผนก
         </button>

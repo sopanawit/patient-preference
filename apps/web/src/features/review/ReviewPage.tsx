@@ -56,7 +56,7 @@ export function ReviewPage() {
   }
 
   const field =
-    "w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500";
+    "w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500";
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
@@ -91,7 +91,7 @@ export function ReviewPage() {
 
               <div className="mt-4 space-y-4">
                 {a.items.map((item) => (
-                  <div key={item.id} className="rounded-lg bg-slate-50 p-3">
+                  <div key={item.id} className="rounded-lg bg-brand-50 p-3">
                     <p className="text-sm">
                       <span
                         className={`mr-2 rounded px-1.5 py-0.5 text-xs ${

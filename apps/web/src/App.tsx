@@ -8,6 +8,7 @@ import {
   Routes,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { Logo } from "@/components/Logo";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RequireRole } from "@/components/RequireRole";
 import { LoginPage } from "@/features/auth/LoginPage";
@@ -42,21 +43,24 @@ function Layout() {
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `block rounded-md px-3 py-2 transition-colors md:py-1.5 ${
       isActive
-        ? "bg-sky-100 text-sky-700"
-        : "text-slate-600 hover:bg-slate-100"
+        ? "bg-white/15 text-white"
+        : "text-brand-100 hover:bg-white/10 hover:text-white"
     }`;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-screen bg-brand-50 text-slate-900">
+      <header className="bg-brand-700 text-white shadow-sm">
         <div className="mx-auto max-w-5xl px-4">
           <div className="flex h-14 items-center gap-4">
-            <span className="min-w-0 flex-1 truncate font-semibold text-slate-800">
-              ระบบความต้องการพิเศษของคนไข้
-            </span>
+            <Logo
+              variant="onDark"
+              className="min-w-0 flex-1"
+              markClass="h-7 w-7 shrink-0"
+              wordmarkClass="text-xl"
+            />
 
             {/* เมนูแนวนอน — เฉพาะจอ md ขึ้นไป */}
-            <nav className="hidden flex-1 gap-1 text-sm md:flex">
+            <nav className="hidden gap-1 text-sm md:flex">
               {items.map((item) => (
                 <NavLink key={item.to} to={item.to} className={navLinkClass}>
                   {item.label}
@@ -65,7 +69,7 @@ function Layout() {
             </nav>
             <button
               onClick={() => void signOut()}
-              className="hidden text-sm text-slate-500 hover:text-slate-800 md:block"
+              className="hidden text-sm text-brand-100 hover:text-white md:block"
             >
               ออกจากระบบ
             </button>
@@ -76,7 +80,7 @@ function Layout() {
               aria-label="เมนู"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
-              className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 md:hidden"
+              className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-md text-white hover:bg-white/10 md:hidden"
             >
               <svg
                 width="22"
@@ -98,7 +102,7 @@ function Layout() {
 
           {/* เมนูแบบ dropdown สำหรับจอเล็ก */}
           {menuOpen && (
-            <nav className="flex flex-col gap-1 border-t border-slate-100 py-2 text-sm md:hidden">
+            <nav className="flex flex-col gap-1 border-t border-white/15 py-2 text-sm md:hidden">
               {items.map((item) => (
                 <NavLink
                   key={item.to}
@@ -114,7 +118,7 @@ function Layout() {
                   closeMenu();
                   void signOut();
                 }}
-                className="mt-1 rounded-md px-3 py-2 text-left text-slate-500 hover:bg-slate-100"
+                className="mt-1 rounded-md px-3 py-2 text-left text-brand-100 hover:bg-white/10 hover:text-white"
               >
                 ออกจากระบบ
               </button>
