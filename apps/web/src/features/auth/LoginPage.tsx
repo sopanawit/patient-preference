@@ -30,7 +30,7 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-brand-50 px-4 py-10">
       <div className="mb-6 flex flex-col items-center text-center">
-        <Logo variant="onLight" markClass="h-12 w-12 shrink-0" wordmarkClass="text-4xl" />
+        <Logo variant="onLight" markClass="h-16 w-16 shrink-0" wordmarkClass="text-4xl" />
         <p className="mt-3 text-sm text-brand-600">
           ระบบความต้องการพิเศษของคนไข้
         </p>

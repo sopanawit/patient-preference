@@ -55,7 +55,7 @@ function Layout() {
             <Logo
               variant="onDark"
               className="min-w-0 flex-1"
-              markClass="h-7 w-7 shrink-0"
+              markClass="h-9 w-9 shrink-0"
               wordmarkClass="text-xl"
             />
 

@@ -7,17 +7,18 @@
  */
 type LogoVariant = "onDark" | "onLight";
 
-// ใบเรียวปลายแหลม (ฐานที่ 0,0 ปลายที่ 0,-100) — ลอยแยกเป็นช่อ
-const BLADE = "M0,0 C5,-24 4.5,-62 1,-100 C-1.5,-62 -4,-24 0,0 Z";
+// ใบเรียวปลายแหลม (ฐาน 0,0 ปลาย 0,-100) — แบบตรง / แบบโค้งกวาด
+const STRAIGHT = "M0,0 C8,-24 7,-62 1.5,-100 C-5.5,-62 -7.5,-24 0,0 Z";
+const CURVED = "M0,0 C11,-30 10,-70 3,-100 C-3,-66 -8,-26 0,0 Z";
 
-// ช่อใบ: มุม (องศา ตามเข็มจากแนวตั้ง) + ความยาว (k) + ระยะฐานห่างจากจุดรวม (off)
-const BLADES: { a: number; k: number; off: number }[] = [
-  { a: -12, k: 0.5, off: 40 }, // ใบเล็กด้านบน (ลอยแยก)
-  { a: 12, k: 0.7, off: 22 },
-  { a: 37, k: 0.98, off: 15 },
-  { a: 60, k: 1.22, off: 11 }, // ใบยาวชี้ขวา
-  { a: 84, k: 1.28, off: 9 }, // ใบยาวสุด กวาดลงขวา
-  { a: 106, k: 0.95, off: 13 }, // ใบล่าง
+// ช่อใบ: มุม (องศา ตามเข็มจากแนวตั้ง) + ความยาว (k) + ระยะฐานห่างจากจุดรวม (off) + โค้ง (c)
+const BLADES: { a: number; k: number; off: number; c?: boolean }[] = [
+  { a: 20, k: 0.5, off: 40 }, // ใบเล็กด้านบน (ลอยแยก)
+  { a: 48, k: 0.72, off: 22 }, // บน-ขวา
+  { a: 76, k: 0.95, off: 15 }, // เกือบแนวนอน ชี้ขวา
+  { a: 104, k: 1.14, off: 11, c: true }, // ขวา-ล่าง
+  { a: 150, k: 1.34, off: 8, c: true }, // ใบยาวสุด กวาดลง
+  { a: 176, k: 1.02, off: 11, c: true }, // ใบล่าง
 ];
 
 function LeafMark({
@@ -28,13 +29,13 @@ function LeafMark({
   className?: string;
 }) {
   return (
-    <svg viewBox="16 -25 96 96" className={className} aria-hidden="true">
+    <svg viewBox="4.5 -26.4 142.7 142.7" className={className} aria-hidden="true">
       <g fill={color}>
         {BLADES.map((b, i) => (
           <path
             key={i}
-            d={BLADE}
-            transform={`translate(36 46) rotate(${b.a}) translate(0 ${-b.off}) scale(${0.34 * b.k} ${0.48 * b.k})`}
+            d={b.c ? CURVED : STRAIGHT}
+            transform={`translate(44 42) rotate(${b.a}) translate(0 ${-b.off}) scale(${0.42 * b.k} ${0.5 * b.k})`}
           />
         ))}
       </g>
