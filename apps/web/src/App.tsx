@@ -8,7 +8,6 @@ import {
   Routes,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { Logo } from "@/components/Logo";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RequireRole } from "@/components/RequireRole";
 import { LoginPage } from "@/features/auth/LoginPage";
@@ -20,6 +19,7 @@ import { AdminPage } from "@/features/admin/AdminPage";
 import { AccessRequestsPage } from "@/features/admin/access/AccessRequestsPage";
 import { DepartmentsPage } from "@/features/admin/departments/DepartmentsPage";
 import { LineSettingsPage } from "@/features/admin/LineSettingsPage";
+import logoUrl from "@/assets/koon-logo.png";
 import type { StaffRole } from "@/types/database";
 
 const NAV: { to: string; label: string; roles?: StaffRole[] }[] = [
@@ -52,12 +52,13 @@ function Layout() {
       <header className="bg-brand-700 text-white shadow-sm">
         <div className="mx-auto max-w-5xl px-4">
           <div className="flex h-14 items-center gap-4">
-            <Logo
-              variant="onDark"
-              className="min-w-0 flex-1"
-              markClass="h-9 w-9 shrink-0"
-              wordmarkClass="text-xl"
-            />
+            <div className="min-w-0 flex-1">
+              <img
+                src={logoUrl}
+                alt="KOON"
+                className="h-9 w-auto rounded-md bg-white px-2.5 py-1.5"
+              />
+            </div>
 
             {/* เมนูแนวนอน — เฉพาะจอ md ขึ้นไป */}
             <nav className="hidden gap-1 text-sm md:flex">

@@ -14,11 +14,16 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // อ่านค่าจากฟอร์มจริง (กันปัญหา browser autofill ที่ไม่ trigger onChange
+    // ทำให้ state ว่างตอนกด Enter) — fallback เป็น state ถ้าไม่มีค่า
+    const fd = new FormData(e.currentTarget);
+    const emailVal = (String(fd.get("email") ?? "") || email).trim();
+    const passwordVal = String(fd.get("password") ?? "") || password;
     setError(null);
     setSubmitting(true);
-    const { error: signInError } = await db.auth.signIn(email.trim(), password);
+    const { error: signInError } = await db.auth.signIn(emailVal, passwordVal);
     setSubmitting(false);
     if (signInError) {
       setError("เข้าสู่ระบบไม่สำเร็จ — ตรวจสอบอีเมลและรหัสผ่าน");
@@ -56,6 +61,7 @@ export function LoginPage() {
           อีเมล
           <input
             type="email"
+            name="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -68,6 +74,7 @@ export function LoginPage() {
           รหัสผ่าน
           <input
             type="password"
+            name="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
