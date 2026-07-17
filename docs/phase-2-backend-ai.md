@@ -42,6 +42,8 @@
 ## การตัดสินใจสำคัญ
 - **Transport = Anthropic API ตรง** (ตาม scaffold + `supabase/.env.example`) — CLAUDE.md §15
   เปิดทางเลือก Bedrock ไว้ ถ้าจะเปลี่ยนแก้เฉพาะฟังก์ชัน `callModel()`
+- **Model = `claude-haiku-4-5-20251001` (Haiku 4.5)** — ตามที่ตกลง (เร็ว/ประหยัด)
+  เปลี่ยนกลับเป็น `claude-opus-4-8` ได้ที่ค่าคงที่ `MODEL` ใน edge function
 - Edge Function อ่าน likes/dislikes จาก DB เอง (ไม่รับจาก client) เพื่อความถูกต้อง/ปลอดภัย
   และให้ `source_hash` ตรงกับข้อมูลที่บันทึกจริง
 - audit actor ของ `reanalyze` ดึงจาก JWT ของผู้เรียก
@@ -79,9 +81,21 @@ bun run functions:serve           # serve classify-preferences ด้วย --en
 # สร้าง auth user + promote เป็น admin (ดู seed.sql ท้ายไฟล์) แล้ว login ที่ web
 ```
 
+## สถานะ deploy (ทำแล้ว)
+Deploy ขึ้นโปรเจกต์จริง `zuncjubfymprppzdqagm` ผ่าน Management API (HTTPS) แล้ว:
+- migrations 0001–0005 apply ครบ (10 ตาราง + seed 4 แผนก) ✓
+- ตั้ง secret `ANTHROPIC_API_KEY` ✓
+- deploy edge function `classify-preferences` (version 1, ACTIVE, verify_jwt=true) ✓
+- ทดสอบ invoke จริง: path อ่าน DB → เรียกโมเดล → persist ทำงานครบ ✓
+  (การเรียกโมเดลตอบ 400 "credit balance too low" — เป็นเรื่อง billing ของบัญชี Anthropic
+   ไม่ใช่บั๊กโค้ด ; error handling แยก transaction ทำงานถูกต้อง)
+
 ## งานที่เหลือ / ค้าง
+- **เติมเครดิต Anthropic** เพื่อให้ AI classify ทำงานจริง (โค้ด/คีย์วางถูกแล้ว)
+- **Bootstrap admin**: ต้องสร้าง auth user + promote เป็น `staff` role admin จึงจะ login เว็บได้
+  (Supabase Studio → Auth → Add user ; แล้ว insert staff ตามท้าย `supabase/seed.sql`)
+- **ตั้ง env ฝั่ง frontend (AWS Amplify)**: `VITE_DATA_BACKEND=supabase`,
+  `VITE_SUPABASE_URL=https://zuncjubfymprppzdqagm.supabase.co`, `VITE_SUPABASE_ANON_KEY=<publishable key>`
 - LINE LIFF login flow จริง (materialize `access_requests` → `staff`) — เฟสถัดไป
-- ยังไม่ได้ generate `types/database.ts` จาก DB จริง (เขียนมือให้ตรง migration แล้ว —
-  ควร `gen:types` ทับเมื่อ CLI พร้อม)
-- ตอนนี้ยังไม่ได้ deploy ขึ้นโปรเจกต์ Supabase จริง (ต้องใช้สิทธิ์/creds ของผู้ใช้ — ดูขั้นตอน Deploy)
+- `gen:types` ทับ `types/database.ts` จาก DB จริงเมื่อ CLI ใช้ได้ (ตอนนี้เขียนมือให้ตรง migration แล้ว)
 - ไม่มี retry อัตโนมัติเมื่อ AI ล้ม (คืน error ให้ผู้ใช้กดบันทึกซ้ำเพื่อ trigger ใหม่)
