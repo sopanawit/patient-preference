@@ -16,10 +16,26 @@ import type {
   PatientsApi,
   SettingsApi,
 } from "./api";
-import type { AuthSnapshot, Staff, StaffProfile, StaffRole } from "./model";
+import type {
+  Analysis,
+  AnalysisItem,
+  AnalysisStatus,
+  Assignment,
+  AuthSnapshot,
+  Staff,
+  StaffProfile,
+  StaffRole,
+} from "./model";
 import { APP_SETTING_KEYS } from "@patient-preference/shared";
 
-const BACKEND_TODO = "Supabase backend สำหรับส่วนนี้ยังไม่ทำ (จะทำในเฟส backend)";
+// รูปแบบ row ของ analysis_assignments ที่ดึงมาประกอบ
+interface Assignment2 {
+  id: string;
+  item_id: string;
+  department_id: string;
+  action_text: string;
+  edited_by_reviewer: boolean;
+}
 
 // facade ที่ระบุ type ของ auth surface ที่เราใช้เอง — ไม่พึ่งการ resolve type ของ
 // transitive deps ของ supabase-js (บาง environment เช่น CI resolve type ของ
@@ -186,36 +202,265 @@ const departments: DepartmentsApi = {
   },
 };
 
+function splitTags(text: string | null): string[] {
+  return (text ?? "")
+    .split(/[\n,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+async function audit(
+  actor: string,
+  action: string,
+  entity: string,
+  entityId: string,
+  detail?: Record<string, unknown>,
+): Promise<void> {
+  // ไม่ให้ audit ล้มทำให้ mutation หลักล้ม (best-effort)
+  await supabase
+    .from("audit_log")
+    .insert({ actor, action, entity, entity_id: entityId, detail })
+    .then(undefined, () => {});
+}
+
+/** ประกอบ Analysis (nested items+assignments) จาก preference_analysis rows */
+async function assembleAnalyses(
+  rows: {
+    id: string;
+    hn: string;
+    status: AnalysisStatus;
+    is_current: boolean;
+    generated_at: string;
+  }[],
+): Promise<Analysis[]> {
+  if (rows.length === 0) return [];
+  const analysisIds = rows.map((r) => r.id);
+  const { data: itemRows } = await supabase
+    .from("analysis_items")
+    .select("id, analysis_id, source, original_text")
+    .in("analysis_id", analysisIds);
+  const items = itemRows ?? [];
+
+  const itemIds = items.map((i) => i.id);
+  const { data: asgRows } = itemIds.length
+    ? await supabase
+        .from("analysis_assignments")
+        .select("id, item_id, department_id, action_text, edited_by_reviewer")
+        .in("item_id", itemIds)
+    : { data: [] as Assignment2[] };
+  const assignments = (asgRows ?? []) as Assignment2[];
+
+  const asgByItem = new Map<string, Assignment[]>();
+  for (const a of assignments) {
+    const arr = asgByItem.get(a.item_id) ?? [];
+    arr.push({
+      id: a.id,
+      department_id: a.department_id,
+      action_text: a.action_text,
+      edited_by_reviewer: a.edited_by_reviewer,
+    });
+    asgByItem.set(a.item_id, arr);
+  }
+
+  const itemsByAnalysis = new Map<string, AnalysisItem[]>();
+  for (const it of items) {
+    const arr = itemsByAnalysis.get(it.analysis_id) ?? [];
+    arr.push({
+      id: it.id,
+      source: it.source,
+      original_text: it.original_text,
+      assignments: asgByItem.get(it.id) ?? [],
+    });
+    itemsByAnalysis.set(it.analysis_id, arr);
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    hn: r.hn,
+    status: r.status,
+    is_current: r.is_current,
+    generated_at: r.generated_at,
+    items: itemsByAnalysis.get(r.id) ?? [],
+  }));
+}
+
 const patients: PatientsApi = {
-  async getByHn() {
-    throw new Error(BACKEND_TODO);
+  async getByHn(hn) {
+    const { data } = await supabase
+      .from("patients")
+      .select("hn, full_name, likes_text, dislikes_text")
+      .eq("hn", hn)
+      .maybeSingle();
+    if (!data) return null;
+    return {
+      hn: data.hn,
+      full_name: data.full_name,
+      likes_text: data.likes_text ?? "",
+      dislikes_text: data.dislikes_text ?? "",
+    };
   },
-  async save() {
-    throw new Error(BACKEND_TODO);
+
+  async save({ hn, full_name, likes_text, dislikes_text, room, actorId }) {
+    const { data: existing } = await supabase
+      .from("patients")
+      .select("hn, likes_text, dislikes_text")
+      .eq("hn", hn)
+      .maybeSingle();
+    const prefsChanged =
+      !existing ||
+      (existing.likes_text ?? "") !== likes_text ||
+      (existing.dislikes_text ?? "") !== dislikes_text;
+
+    if (existing) {
+      await supabase
+        .from("patients")
+        .update({ full_name, likes_text, dislikes_text, updated_by: actorId })
+        .eq("hn", hn);
+    } else {
+      await supabase
+        .from("patients")
+        .insert({ hn, full_name, likes_text, dislikes_text, updated_by: actorId });
+    }
+    await audit(actorId, existing ? "update" : "create", "patient", hn, {
+      prefsChanged,
+    });
+
+    // ห้องพัก: อัปเดต active admission หรือสร้างใหม่
+    const { data: adm } = await supabase
+      .from("admissions")
+      .select("id, room")
+      .eq("hn", hn)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (adm) {
+      if (room && room !== adm.room) {
+        await supabase.from("admissions").update({ room }).eq("id", adm.id);
+        await audit(actorId, "update", "admission", adm.id, { room });
+      }
+    } else if (room) {
+      const { data: newAdm } = await supabase
+        .from("admissions")
+        .insert({ hn, room, created_by: actorId })
+        .select("id")
+        .single();
+      if (newAdm) await audit(actorId, "create", "admission", newAdm.id, { room });
+    }
+
+    // แก้ free text → regenerate analysis ผ่าน Edge Function (แยก transaction:
+    // ถ้า AI ล้ม การบันทึกด้านบนยังอยู่ครบ — CLAUDE.md 7.3/8)
+    if (prefsChanged) {
+      try {
+        await supabase.functions.invoke("classify-preferences", {
+          body: { hn },
+        });
+      } catch {
+        /* ไม่ให้การจัดหมวดที่ล้มทำให้การบันทึก free text ล้มตาม */
+      }
+    }
   },
-  async view() {
-    throw new Error(BACKEND_TODO);
+
+  async view(hn) {
+    const { data: patient } = await supabase
+      .from("patients")
+      .select("hn, full_name, likes_text, dislikes_text")
+      .eq("hn", hn)
+      .maybeSingle();
+    if (!patient) return null;
+
+    const { data: adm } = await supabase
+      .from("admissions")
+      .select("room")
+      .eq("hn", hn)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: anaRows } = await supabase
+      .from("preference_analysis")
+      .select("id, hn, status, is_current, generated_at")
+      .eq("hn", hn)
+      .eq("is_current", true);
+    const [analysis] = await assembleAnalyses(anaRows ?? []);
+
+    return {
+      patient: {
+        hn: patient.hn,
+        full_name: patient.full_name,
+        likes_text: patient.likes_text ?? "",
+        dislikes_text: patient.dislikes_text ?? "",
+      },
+      currentRoom: adm?.room ?? null,
+      analysis: analysis ?? null,
+    };
   },
-  async currentAdmission() {
-    throw new Error(BACKEND_TODO);
+
+  async currentAdmission(hn) {
+    const { data } = await supabase
+      .from("admissions")
+      .select("id, hn, room, admit_date, status")
+      .eq("hn", hn)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data ?? null;
   },
+
   async listPreferenceTags() {
-    throw new Error(BACKEND_TODO);
+    const { data } = await supabase
+      .from("patients")
+      .select("likes_text, dislikes_text");
+    const likes = new Set<string>();
+    const dislikes = new Set<string>();
+    for (const p of data ?? []) {
+      splitTags(p.likes_text).forEach((t) => likes.add(t));
+      splitTags(p.dislikes_text).forEach((t) => dislikes.add(t));
+    }
+    return { likes: [...likes], dislikes: [...dislikes] };
   },
 };
 
 const analysis: AnalysisApi = {
   async listPending() {
-    throw new Error(BACKEND_TODO);
+    // RLS: pending_review เห็นได้เฉพาะ cx_manager/admin
+    const { data } = await supabase
+      .from("preference_analysis")
+      .select("id, hn, status, is_current, generated_at")
+      .eq("is_current", true)
+      .eq("status", "pending_review")
+      .order("generated_at", { ascending: true });
+    return assembleAnalyses(data ?? []);
   },
-  async updateAssignment() {
-    throw new Error(BACKEND_TODO);
+
+  async updateAssignment(assignmentId, patch, actorId) {
+    await supabase
+      .from("analysis_assignments")
+      .update({ ...patch, edited_by_reviewer: true })
+      .eq("id", assignmentId);
+    await audit(actorId, "update", "analysis_assignment", assignmentId, patch);
   },
-  async deleteAssignment() {
-    throw new Error(BACKEND_TODO);
+
+  async deleteAssignment(assignmentId, actorId) {
+    await supabase
+      .from("analysis_assignments")
+      .delete()
+      .eq("id", assignmentId);
+    await audit(actorId, "delete", "analysis_assignment", assignmentId);
   },
-  async confirm() {
-    throw new Error(BACKEND_TODO);
+
+  async confirm(analysisId, actorId) {
+    await supabase
+      .from("preference_analysis")
+      .update({
+        status: "confirmed",
+        reviewed_by: actorId,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", analysisId);
+    await audit(actorId, "confirm", "analysis", analysisId);
   },
 };
 
