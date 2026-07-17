@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import { db } from "@/data";
 import { useAuth } from "@/lib/auth";
 import { NON_MEDICAL_HINT } from "@patient-preference/shared";
+import { TagInput, textToTags } from "@/components/TagInput";
+import { useTagHistory } from "@/lib/useTagHistory";
 
 const empty = {
   hn: "",
@@ -21,6 +23,8 @@ export function EntryPage() {
   const [loadedHn, setLoadedHn] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [lookupMsg, setLookupMsg] = useState<string | null>(null);
+  const likeHistory = useTagHistory("like");
+  const dislikeHistory = useTagHistory("dislike");
 
   const set = (k: keyof typeof empty, v: string) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -43,6 +47,8 @@ export function EntryPage() {
         dislikes_text: patient.dislikes_text,
       });
       setLoadedHn(hn);
+      likeHistory.remember(textToTags(patient.likes_text));
+      dislikeHistory.remember(textToTags(patient.dislikes_text));
       setLookupMsg("พบข้อมูลเดิม — ดึงความชอบขึ้นมาให้แล้ว");
     } else {
       setLoadedHn(null);
@@ -122,23 +128,27 @@ export function EntryPage() {
           {NON_MEDICAL_HINT}
         </div>
 
-        <label className="block text-sm font-medium text-slate-700">
-          สิ่งที่ชอบ (แต่ละบรรทัด = 1 เรื่อง)
-          <textarea
+        <div className="block text-sm font-medium text-slate-700">
+          สิ่งที่ชอบ (พิมพ์แล้วกด Enter เพื่อเพิ่มเป็นรายการ)
+          <TagInput
             value={form.likes_text}
-            onChange={(e) => set("likes_text", e.target.value)}
-            className={`${field} min-h-24`}
+            onChange={(v) => set("likes_text", v)}
+            suggestions={likeHistory.history}
+            onAddTag={likeHistory.remember}
+            placeholder="เช่น ชอบดูทีวี แล้วกด Enter"
           />
-        </label>
+        </div>
 
-        <label className="block text-sm font-medium text-slate-700">
-          สิ่งที่ไม่ชอบ (แต่ละบรรทัด = 1 เรื่อง)
-          <textarea
+        <div className="block text-sm font-medium text-slate-700">
+          สิ่งที่ไม่ชอบ (พิมพ์แล้วกด Enter เพื่อเพิ่มเป็นรายการ)
+          <TagInput
             value={form.dislikes_text}
-            onChange={(e) => set("dislikes_text", e.target.value)}
-            className={`${field} min-h-24`}
+            onChange={(v) => set("dislikes_text", v)}
+            suggestions={dislikeHistory.history}
+            onAddTag={dislikeHistory.remember}
+            placeholder="เช่น ไม่ชอบเสียงดัง แล้วกด Enter"
           />
-        </label>
+        </div>
 
         <div className="flex items-center gap-3 pt-2">
           <button
