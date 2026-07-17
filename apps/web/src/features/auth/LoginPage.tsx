@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { db, DATA_BACKEND } from "@/data";
+import { useAuth } from "@/lib/auth";
 import logoUrl from "@/assets/koon-logo.png";
 
 /**
@@ -8,11 +9,15 @@ import logoUrl from "@/assets/koon-logo.png";
  * staff ทั่วไปเข้าผ่าน LINE LIFF (ทำภายหลัง) ไม่ใช้หน้านี้
  */
 export function LoginPage() {
-  const navigate = useNavigate();
+  const { userId, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // ล็อกอินแล้ว → เด้งเข้าระบบแบบ declarative (กัน race: บน Supabase auth state
+  // อัปเดตแบบ async หลัง signIn — ถ้า navigate เองทันทีจะโดน RequireAuth เด้งกลับ)
+  if (!loading && userId) return <Navigate to="/dashboard" replace />;
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,12 +29,13 @@ export function LoginPage() {
     setError(null);
     setSubmitting(true);
     const { error: signInError } = await db.auth.signIn(emailVal, passwordVal);
-    setSubmitting(false);
     if (signInError) {
+      setSubmitting(false);
       setError("เข้าสู่ระบบไม่สำเร็จ — ตรวจสอบอีเมลและรหัสผ่าน");
       return;
     }
-    navigate("/dashboard", { replace: true });
+    // ไม่ต้อง navigate เอง — เมื่อ auth state อัปเดต useAuth().userId จะทำให้
+    // component นี้ re-render แล้ว <Navigate> ด้านบนพาเข้า /dashboard
   }
 
   return (
