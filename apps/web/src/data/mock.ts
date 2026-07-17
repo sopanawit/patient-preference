@@ -301,6 +301,21 @@ const patients: PatientsApi = {
       db.admissions.find((a) => a.hn === hn && a.status === "active") ?? null
     );
   },
+  async listPreferenceTags() {
+    const collect = (key: "likes_text" | "dislikes_text") => {
+      const seen = new Set<string>();
+      for (const p of db.patients) {
+        for (const t of (p[key] ?? "")
+          .split(/[\n,]/)
+          .map((s) => s.trim())
+          .filter(Boolean)) {
+          seen.add(t);
+        }
+      }
+      return [...seen];
+    };
+    return { likes: collect("likes_text"), dislikes: collect("dislikes_text") };
+  },
   async save({ hn, full_name, likes_text, dislikes_text, room }) {
     const existing = db.patients.find((p) => p.hn === hn);
     const changed =

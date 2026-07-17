@@ -199,6 +199,9 @@ const patients: PatientsApi = {
   async currentAdmission() {
     throw new Error(BACKEND_TODO);
   },
+  async listPreferenceTags() {
+    throw new Error(BACKEND_TODO);
+  },
 };
 
 const analysis: AnalysisApi = {

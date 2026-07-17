@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { db } from "@/data";
 import { useAuth } from "@/lib/auth";
 import { NON_MEDICAL_HINT } from "@patient-preference/shared";
@@ -25,6 +25,20 @@ export function EntryPage() {
   const [lookupMsg, setLookupMsg] = useState<string | null>(null);
   const likeHistory = useTagHistory("like");
   const dislikeHistory = useTagHistory("dislike");
+
+  // โหลดคำที่เคยกรอกทั้งระบบมาเป็นคลัง autocomplete (เสริมจากที่เก็บใน localStorage)
+  useEffect(() => {
+    db.patients
+      .listPreferenceTags()
+      .then(({ likes, dislikes }) => {
+        likeHistory.remember(likes);
+        dislikeHistory.remember(dislikes);
+      })
+      .catch(() => {
+        /* backend ยังไม่รองรับ — ใช้ประวัติจาก localStorage อย่างเดียว */
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const set = (k: keyof typeof empty, v: string) => {
     setForm((f) => ({ ...f, [k]: v }));
