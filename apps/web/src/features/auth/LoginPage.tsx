@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, DATA_BACKEND } from "@/data";
-import { Logo } from "@/components/Logo";
+
+// โลโก้หน้า login ใช้ภาพจาก URL ของ KOON
+const LOGIN_LOGO_URL =
+  "https://images.squarespace-cdn.com/content/v1/62970e793aa6db74254c7be9/dfbe482c-b079-495f-a834-92f6ebcd2c4f/KOON_Website_c1_r2_ma-03.png?format=1500w";
 
 /**
  * หน้า login สำหรับ admin (email/password ผ่าน Supabase Auth)
@@ -30,7 +33,11 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-brand-50 px-4 py-10">
       <div className="mb-6 flex flex-col items-center text-center">
-        <Logo variant="onLight" markClass="h-16 w-16 shrink-0" wordmarkClass="text-4xl" />
+        <img
+          src={LOGIN_LOGO_URL}
+          alt="KOON"
+          className="h-24 w-auto object-contain"
+        />
         <p className="mt-3 text-sm text-brand-600">
           ระบบความต้องการพิเศษของคนไข้
         </p>
