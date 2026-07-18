@@ -164,11 +164,11 @@ export function EntryPage() {
           />
         </div>
 
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex flex-wrap items-center gap-3 pt-2">
           <button
             type="submit"
             disabled={status === "saving"}
-            className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
+            className="shrink-0 whitespace-nowrap rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
           >
             {status === "saving" ? "กำลังบันทึก…" : "บันทึก"}
           </button>
