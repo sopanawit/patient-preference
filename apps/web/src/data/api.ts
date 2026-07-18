@@ -48,6 +48,12 @@ export interface PatientsApi {
 
 export interface AnalysisApi {
   listPending(): Promise<Analysis[]>;
+  /** CX เพิ่ม action รายแผนกให้ item เอง (ใช้เมื่อปิด AI — แบ่งแผนกด้วยมือ) */
+  addAssignment(
+    itemId: string,
+    input: { department_id: string; action_text: string },
+    actorId: string,
+  ): Promise<void>;
   updateAssignment(
     assignmentId: string,
     patch: { action_text?: string; department_id?: string },

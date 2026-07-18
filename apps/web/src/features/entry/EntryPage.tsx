@@ -174,7 +174,7 @@ export function EntryPage() {
           </button>
           {status === "saved" && (
             <span className="text-sm text-emerald-600">
-              บันทึกแล้ว — ระบบส่งจัดหมวดใหม่ (รอ CX ตรวจ)
+              บันทึกแล้ว — ส่งให้ CX แบ่งแผนก (รอตรวจ)
             </span>
           )}
           {loadedHn && status === "idle" && (

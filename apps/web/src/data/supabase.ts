@@ -435,6 +435,20 @@ const analysis: AnalysisApi = {
     return assembleAnalyses(data ?? []);
   },
 
+  async addAssignment(itemId, input, actorId) {
+    const { data } = await supabase
+      .from("analysis_assignments")
+      .insert({
+        item_id: itemId,
+        department_id: input.department_id,
+        action_text: input.action_text,
+        edited_by_reviewer: true,
+      })
+      .select("id")
+      .single();
+    if (data) await audit(actorId, "create", "analysis_assignment", data.id, { item_id: itemId });
+  },
+
   async updateAssignment(assignmentId, patch, actorId) {
     await supabase
       .from("analysis_assignments")

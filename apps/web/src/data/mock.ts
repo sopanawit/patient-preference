@@ -139,6 +139,19 @@ function seed(): Store {
     departments,
   );
   confirmed.status = "confirmed";
+  // ตัวอย่าง action ที่ CX แบ่งแผนกเอง (เดโม flow แบบไม่มี AI)
+  confirmed.items[0]?.assignments.push({
+    id: id("asg"),
+    department_id: housekeeping.id,
+    action_text: "เตรียมทีวีเคลื่อนที่ไว้ในห้องพักก่อนคนไข้เข้า",
+    edited_by_reviewer: true,
+  });
+  confirmed.items[1]?.assignments.push({
+    id: id("asg"),
+    department_id: nursing.id,
+    action_text: "เข้าห้องพูดคุยด้วยเสียงเบา ลดการรบกวน",
+    edited_by_reviewer: true,
+  });
   store.analyses.push(confirmed);
 
   // คนไข้ตัวอย่าง B — analysis ยังรอตรวจ (pending_review)
@@ -168,66 +181,26 @@ function seed(): Store {
 }
 
 // ---------------------------------------------------------------------------
-// Mock AI classifier — เลียนแบบ Edge Function classify-preferences
-// heuristic ง่าย ๆ: แยกบรรทัด → แมปคำสำคัญเข้าแผนก → fallback 'other'
+// แตกรายการความต้องการ (ปิด AI แบ่งแผนกแล้ว — CX แบ่งเองในหน้าคิวรอตรวจ)
+// แค่แยก likes/dislikes เป็น items ต่อบรรทัด ไม่มี assignment เริ่มต้น
 // ---------------------------------------------------------------------------
 function classify(
   hn: string,
   likes: string,
   dislikes: string,
-  departments: Department[],
+  _departments: Department[],
 ): Analysis {
-  const byCode = (code: string) =>
-    departments.find((d) => d.code === code) ??
-    departments.find((d) => d.code === "other")!;
-
-  const rules: { kw: string[]; code: string; action: (t: string) => string }[] =
-    [
-      {
-        kw: ["ทีวี", "โทรทัศน์"],
-        code: "housekeeping",
-        action: () => "เตรียมทีวีเคลื่อนที่ไว้ในห้องพักก่อนคนไข้เข้า",
-      },
-      {
-        kw: ["เสียงดัง", "เงียบ"],
-        code: "nursing",
-        action: () => "เข้าห้องพูดคุยด้วยเสียงเบา ลดการรบกวน",
-      },
-      {
-        kw: ["อาหาร", "รสจัด", "น้ำอุ่น", "เผ็ด"],
-        code: "dietary",
-        action: (t) => `ปรับรายการอาหาร/เครื่องดื่มตามความต้องการ: ${t}`,
-      },
-      {
-        kw: ["แสง", "ห้อง", "เตียง"],
-        code: "housekeeping",
-        action: (t) => `จัดสภาพห้องตามความต้องการ: ${t}`,
-      },
-    ];
-
   const makeItems = (text: string, source: "like" | "dislike"): AnalysisItem[] =>
     text
       .split(/[\n,]/)
       .map((s) => s.trim())
       .filter(Boolean)
-      .map((line) => {
-        const matched = rules.filter((r) =>
-          r.kw.some((k) => line.includes(k)),
-        );
-        const picks = matched.length ? matched : null;
-        const assignments = (picks ?? [
-          {
-            code: "other",
-            action: () => `ประสานงานตามความต้องการ: ${line}`,
-          },
-        ]).map((r) => ({
-          id: id("asg"),
-          department_id: byCode(r.code).id,
-          action_text: r.action(line),
-          edited_by_reviewer: false,
-        }));
-        return { id: id("item"), source, original_text: line, assignments };
-      });
+      .map((line) => ({
+        id: id("item"),
+        source,
+        original_text: line,
+        assignments: [],
+      }));
 
   return {
     id: id("ana"),
@@ -374,6 +347,18 @@ const patients: PatientsApi = {
 const analysis: AnalysisApi = {
   async listPending() {
     return db.analyses.filter((a) => a.is_current && a.status === "pending_review");
+  },
+  async addAssignment(itemId, input) {
+    for (const a of db.analyses)
+      for (const item of a.items)
+        if (item.id === itemId) {
+          item.assignments.push({
+            id: id("asg"),
+            department_id: input.department_id,
+            action_text: input.action_text,
+            edited_by_reviewer: true,
+          });
+        }
   },
   async updateAssignment(assignmentId, patch) {
     for (const a of db.analyses)

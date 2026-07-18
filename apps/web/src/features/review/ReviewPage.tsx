@@ -3,8 +3,8 @@ import { db, type Analysis, type Department } from "@/data";
 import { useAuth } from "@/lib/auth";
 
 /**
- * คิวรอตรวจ (CX/Admin) — ดู original_text คู่กับ action ที่ AI เสนอ
- * แก้ action_text / ย้ายแผนก / ลบ แล้วกดยืนยัน → confirmed (CLAUDE.md 7.6)
+ * คิวรอตรวจ (CX/Admin) — ดูความต้องการ (original_text) แล้ว "แบ่งแผนก + เขียน action เอง"
+ * (ปิด AI แบ่งงานแล้ว) แก้/ย้าย/ลบ ได้ แล้วกดยืนยัน → confirmed (CLAUDE.md 7.6)
  */
 export function ReviewPage() {
   const { profile } = useAuth();
@@ -47,6 +47,11 @@ export function ReviewPage() {
     await db.analysis.deleteAssignment(id, profile.id);
     await load();
   }
+  async function addAssign(itemId: string, department_id: string, action_text: string) {
+    if (!profile) return;
+    await db.analysis.addAssignment(itemId, { department_id, action_text }, profile.id);
+    await load();
+  }
   async function confirm(analysisId: string) {
     if (!profile) return;
     setBusy(analysisId);
@@ -61,6 +66,9 @@ export function ReviewPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-xl font-semibold text-slate-800">คิวรอตรวจ (CX)</h1>
+      <p className="mt-1 text-sm text-slate-500">
+        แต่ละความต้องการ เลือกแผนกและพิมพ์ action ที่ต้องเตรียม แล้วกดยืนยันเพื่อเผยแพร่
+      </p>
 
       {items.length === 0 ? (
         <p className="mt-6 rounded-md bg-slate-100 px-4 py-3 text-sm text-slate-500">
@@ -137,9 +145,13 @@ export function ReviewPage() {
                       ))}
                       {item.assignments.length === 0 && (
                         <p className="text-xs text-slate-400">
-                          (ไม่มี action — จะไม่แสดงในผลลัพธ์)
+                          ยังไม่ได้แบ่งแผนก — เลือกแผนกและพิมพ์ action ด้านล่าง
                         </p>
                       )}
+                      <AddAssignment
+                        depts={depts}
+                        onAdd={(d, a) => void addAssign(item.id, d, a)}
+                      />
                     </div>
                   </div>
                 ))}
@@ -148,6 +160,52 @@ export function ReviewPage() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** ฟอร์มเล็ก ๆ ให้ CX เพิ่มแผนก + action ให้ความต้องการหนึ่งข้อ */
+function AddAssignment({
+  depts,
+  onAdd,
+}: {
+  depts: Department[];
+  onAdd: (departmentId: string, actionText: string) => void;
+}) {
+  const [deptId, setDeptId] = useState("");
+  const [action, setAction] = useState("");
+  const chosen = deptId || depts[0]?.id || "";
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-slate-200 pt-2">
+      <select
+        value={chosen}
+        onChange={(e) => setDeptId(e.target.value)}
+        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm sm:w-auto"
+      >
+        {depts.map((d) => (
+          <option key={d.id} value={d.id}>
+            {d.name_th}
+          </option>
+        ))}
+      </select>
+      <input
+        value={action}
+        onChange={(e) => setAction(e.target.value)}
+        placeholder="พิมพ์ action ที่แผนกนี้ต้องเตรียม…"
+        className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 sm:flex-1"
+      />
+      <button
+        type="button"
+        disabled={!chosen || !action.trim()}
+        onClick={() => {
+          onAdd(chosen, action.trim());
+          setAction("");
+        }}
+        className="rounded-md bg-brand-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+      >
+        ＋ เพิ่มแผนก
+      </button>
     </div>
   );
 }

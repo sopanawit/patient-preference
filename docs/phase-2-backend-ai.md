@@ -39,6 +39,15 @@
 - **action รายแผนก (`analysis_assignments`) ยังล็อกเหมือนเดิม** — เห็นเฉพาะ `confirmed`
   หรือเป็น reviewer (policy จาก 0002 ไม่เปลี่ยน) ; แถว analysis ไม่มี free text จึงไม่เพิ่มความเสี่ยง
 
+## สถานะ AI (ปิดอยู่ — ประหยัดค่าใช้จ่าย)
+ตามที่ตกลง **ปิดการเรียกโมเดลไว้ก่อน** — Edge Function จะ "แตกความต้องการเป็น
+รายการ (items)" เท่านั้น ไม่เรียก Claude (ไม่มีค่าใช้จ่าย) แล้ว **CX แบ่งแผนก +
+เขียน action เอง** ในหน้าคิวรอตรวจ (มีปุ่ม "＋ เพิ่มแผนก" ต่อรายการ)
+- คุมด้วย env ของ function: `AI_CLASSIFY_ENABLED` (ไม่ตั้ง/ไม่ใช่ `true` = ปิด)
+- **เปิด AI กลับมา**: `supabase secrets set AI_CLASSIFY_ENABLED=true` (ต้องมี
+  `ANTHROPIC_API_KEY` + เครดิต) แล้ว function จะจัด action รายแผนกอัตโนมัติเหมือนเดิม
+- analysis ที่สร้างตอนปิด AI จะมี `model = "manual"`
+
 ## การตัดสินใจสำคัญ
 - **Transport = Anthropic API ตรง** (ตาม scaffold + `supabase/.env.example`) — CLAUDE.md §15
   เปิดทางเลือก Bedrock ไว้ ถ้าจะเปลี่ยนแก้เฉพาะฟังก์ชัน `callModel()`
