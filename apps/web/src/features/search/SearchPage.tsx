@@ -1,19 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
 import { db, type Department, type PatientView } from "@/data";
+import { useAuth } from "@/lib/auth";
 
 /**
  * หน้าค้นด้วย HN — แสดงชื่อ/ห้อง/ความชอบ + action รายแผนก (ที่ confirmed แล้ว)
  * ระหว่าง pending_review: เห็น free text ดิบได้ แต่ action ยังไม่แสดง (CLAUDE.md 7.5)
  */
 export function SearchPage() {
+  const { profile } = useAuth();
   const [hn, setHn] = useState("");
   const [result, setResult] = useState<PatientView | null>(null);
   const [searched, setSearched] = useState(false);
   const [depts, setDepts] = useState<Department[]>([]);
+  const [discharging, setDischarging] = useState(false);
 
   useEffect(() => {
     db.departments.listAll().then(setDepts);
   }, []);
+
+  async function discharge() {
+    if (!result || !profile) return;
+    const ok = window.confirm(
+      `จำหน่ายคนไข้ ${result.patient.full_name} (ออกจากห้อง ${result.currentRoom})?`,
+    );
+    if (!ok) return;
+    setDischarging(true);
+    await db.patients.discharge(result.patient.hn, profile.id);
+    setResult(await db.patients.view(result.patient.hn));
+    setDischarging(false);
+  }
 
   const deptName = useMemo(
     () => (id: string) => depts.find((d) => d.id === id)?.name_th ?? "อื่น ๆ",
@@ -82,9 +97,20 @@ export function SearchPage() {
               <h2 className="min-w-0 break-words text-lg font-semibold text-slate-800">
                 {result.patient.full_name}
               </h2>
-              <span className="min-w-0 break-words text-sm text-slate-500">
-                ห้อง: {result.currentRoom ?? "—"}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="min-w-0 break-words text-sm text-slate-500">
+                  ห้อง: {result.currentRoom ?? "—"}
+                </span>
+                {result.currentRoom && (
+                  <button
+                    onClick={() => void discharge()}
+                    disabled={discharging}
+                    className="shrink-0 whitespace-nowrap rounded-md border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    {discharging ? "กำลังจำหน่าย…" : "จำหน่าย"}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div className="min-w-0">

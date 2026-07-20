@@ -42,6 +42,8 @@ export interface PatientsApi {
   }): Promise<void>;
   view(hn: string): Promise<PatientView | null>;
   currentAdmission(hn: string): Promise<Admission | null>;
+  /** จำหน่ายคนไข้: ตั้ง admission ที่ active อยู่ของ HN นี้เป็น discharged */
+  discharge(hn: string, actorId: string): Promise<void>;
   /** คำที่เคยกรอกทั้งระบบ (แยก like/dislike) — ใช้เป็นคลัง autocomplete */
   listPreferenceTags(): Promise<{ likes: string[]; dislikes: string[] }>;
 }

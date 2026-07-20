@@ -413,6 +413,23 @@ const patients: PatientsApi = {
     return data ?? null;
   },
 
+  async discharge(hn, actorId) {
+    const { data: adm } = await supabase
+      .from("admissions")
+      .select("id")
+      .eq("hn", hn)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!adm) return;
+    await supabase
+      .from("admissions")
+      .update({ status: "discharged" })
+      .eq("id", adm.id);
+    await audit(actorId, "update", "admission", adm.id, { status: "discharged" });
+  },
+
   async listPreferenceTags() {
     const { data } = await supabase
       .from("patients")

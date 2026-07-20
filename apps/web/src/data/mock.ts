@@ -274,6 +274,10 @@ const patients: PatientsApi = {
       db.admissions.find((a) => a.hn === hn && a.status === "active") ?? null
     );
   },
+  async discharge(hn) {
+    const adm = db.admissions.find((a) => a.hn === hn && a.status === "active");
+    if (adm) adm.status = "discharged";
+  },
   async listPreferenceTags() {
     const collect = (key: "likes_text" | "dislikes_text") => {
       const seen = new Set<string>();
