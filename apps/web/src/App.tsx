@@ -19,7 +19,7 @@ import { AdminPage } from "@/features/admin/AdminPage";
 import { AccessRequestsPage } from "@/features/admin/access/AccessRequestsPage";
 import { DepartmentsPage } from "@/features/admin/departments/DepartmentsPage";
 import { LineSettingsPage } from "@/features/admin/LineSettingsPage";
-import logoUrl from "@/assets/koon-logo.png";
+import iconUrl from "@/assets/koon-icon.png";
 import type { StaffRole } from "@/types/database";
 
 const NAV: { to: string; label: string; roles?: StaffRole[] }[] = [
@@ -52,12 +52,11 @@ function Layout() {
       <header className="bg-brand-700 text-white shadow-sm">
         <div className="mx-auto max-w-5xl px-4">
           <div className="flex h-14 items-center gap-4">
-            <div className="min-w-0 flex-1">
-              <img
-                src={logoUrl}
-                alt="KOON"
-                className="h-9 w-auto rounded-md bg-white px-2.5 py-1.5"
-              />
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <img src={iconUrl} alt="" aria-hidden="true" className="h-9 w-auto" />
+              <span className="font-serif text-xl font-semibold leading-none tracking-[0.18em] text-brand-50">
+                KOON
+              </span>
             </div>
 
             {/* เมนูแนวนอน — เฉพาะจอ md ขึ้นไป */}
