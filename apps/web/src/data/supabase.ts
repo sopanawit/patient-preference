@@ -106,7 +106,11 @@ const dashboard: DashboardApi = {
       await Promise.all([
         count("patients"),
         count("admissions", (q) => q.eq("status", "active")),
-        count("preference_analysis", (q) => q.eq("status", "pending_review")),
+        // นับเฉพาะเวอร์ชันปัจจุบัน (is_current) ให้ตรงกับคิวรอตรวจจริง
+        // ไม่งั้นจะนับ analysis เวอร์ชันเก่าที่ยัง pending_review ค้างอยู่ด้วย
+        count("preference_analysis", (q) =>
+          q.eq("status", "pending_review").eq("is_current", true),
+        ),
         isAdmin
           ? count("access_requests", (q) => q.eq("status", "pending"))
           : Promise.resolve(0),
