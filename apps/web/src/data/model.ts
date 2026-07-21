@@ -84,6 +84,7 @@ export interface Staff {
   is_active: boolean;
   department_id: string | null;
   line_user_id: string | null;
+  email?: string | null;
 }
 
 export interface AccessRequest {

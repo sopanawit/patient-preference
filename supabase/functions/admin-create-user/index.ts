@@ -103,6 +103,7 @@ Deno.serve(async (req: Request) => {
     role,
     is_active: true,
     department_id: departmentId,
+    email,
   });
   if (staffErr) {
     // rollback: ลบ auth user ที่เพิ่งสร้าง เพื่อไม่ให้ค้างครึ่งทาง

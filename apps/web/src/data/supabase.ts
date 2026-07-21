@@ -172,7 +172,7 @@ const access: AccessApi = {
   async listStaff(): Promise<Staff[]> {
     const { data } = await supabase
       .from("staff")
-      .select("id, full_name, role, is_active, department_id, line_user_id")
+      .select("id, full_name, role, is_active, department_id, line_user_id, email")
       .order("full_name", { ascending: true });
     return data ?? [];
   },
@@ -181,6 +181,26 @@ const access: AccessApi = {
   },
   async changeRole(staffId, role: StaffRole) {
     await supabase.from("staff").update({ role }).eq("id", staffId);
+  },
+  async updateUser(userId, patch) {
+    const { data, error } = await supabase.functions.invoke(
+      "admin-update-user",
+      { body: { user_id: userId, ...patch } },
+    );
+    if (error) {
+      let msg = "แก้ไขไม่สำเร็จ (สิทธิ์ไม่พอหรือเซิร์ฟเวอร์ผิดพลาด)";
+      try {
+        const ctx = (error as { context?: Response }).context;
+        const body = ctx ? await ctx.json() : null;
+        if (body?.error) msg = body.error;
+      } catch {
+        /* ใช้ข้อความ default */
+      }
+      return { error: msg };
+    }
+    if (data && data.ok === false)
+      return { error: data.message ?? "แก้ไขไม่สำเร็จ" };
+    return { error: null };
   },
 };
 

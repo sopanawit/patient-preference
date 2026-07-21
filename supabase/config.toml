@@ -40,3 +40,7 @@ verify_jwt = true
 # Edge Function สร้างบัญชีเจ้าหน้าที่ (ตรวจสิทธิ์ admin ภายใน) — ต้อง login
 [functions.admin-create-user]
 verify_jwt = true
+
+# Edge Function แก้ไขข้อมูลบัญชีเจ้าหน้าที่ (ตรวจสิทธิ์ admin ภายใน) — ต้อง login
+[functions.admin-update-user]
+verify_jwt = true

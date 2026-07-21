@@ -429,8 +429,30 @@ const access: AccessApi = {
       is_active: true,
       department_id,
       line_user_id: null,
+      email: key,
     });
     db.emailToStaffId[key] = staffId;
+    return { error: null };
+  },
+  async updateUser(userId, patch) {
+    const s = db.staff.find((x) => x.id === userId);
+    if (!s) return { error: "ไม่พบผู้ใช้" };
+    if (patch.full_name !== undefined) {
+      if (!patch.full_name.trim()) return { error: "ชื่อ-สกุลห้ามว่าง" };
+      s.full_name = patch.full_name.trim();
+    }
+    if (patch.department_id !== undefined) s.department_id = patch.department_id;
+    if (patch.email !== undefined && patch.email !== "") {
+      const newEmail = patch.email.trim().toLowerCase();
+      if (!newEmail.includes("@")) return { error: "อีเมลไม่ถูกต้อง" };
+      const owner = db.emailToStaffId[newEmail];
+      if (owner && owner !== userId)
+        return { error: "อีเมลนี้มีบัญชีอื่นใช้อยู่แล้ว" };
+      for (const [em, sid] of Object.entries(db.emailToStaffId))
+        if (sid === userId) delete db.emailToStaffId[em];
+      db.emailToStaffId[newEmail] = userId;
+      s.email = newEmail;
+    }
     return { error: null };
   },
   async approve(requestId) {
@@ -442,7 +464,12 @@ const access: AccessApi = {
     if (r) r.status = "rejected";
   },
   async listStaff() {
-    return [...db.staff].sort((a, b) => a.full_name.localeCompare(b.full_name));
+    const emailByStaff: Record<string, string> = {};
+    for (const [em, sid] of Object.entries(db.emailToStaffId))
+      emailByStaff[sid] = em;
+    return [...db.staff]
+      .map((s) => ({ ...s, email: s.email ?? emailByStaff[s.id] ?? null }))
+      .sort((a, b) => a.full_name.localeCompare(b.full_name));
   },
   async setActive(staffId, isActive) {
     const s = db.staff.find((x) => x.id === staffId);

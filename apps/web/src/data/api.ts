@@ -101,6 +101,12 @@ export interface AccessApi {
   listStaff(): Promise<Staff[]>;
   setActive(staffId: string, isActive: boolean, actorId: string): Promise<void>;
   changeRole(staffId: string, role: StaffRole, actorId: string): Promise<void>;
+  /** admin แก้ไขข้อมูลบัญชี (ชื่อ/อีเมลล็อกอิน/แผนก) — คืน error string ถ้าไม่สำเร็จ */
+  updateUser(
+    userId: string,
+    patch: { full_name?: string; email?: string; department_id?: string | null },
+    actorId: string,
+  ): Promise<{ error: string | null }>;
 }
 
 export interface SettingsApi {

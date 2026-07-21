@@ -24,6 +24,7 @@ export type Database = {
           is_active: boolean;
           line_user_id: string | null;
           department_id: string | null;
+          email: string | null;
         };
         Insert: {
           id: string;
@@ -32,6 +33,7 @@ export type Database = {
           is_active?: boolean;
           line_user_id?: string | null;
           department_id?: string | null;
+          email?: string | null;
         };
         Update: {
           full_name?: string;
@@ -39,6 +41,7 @@ export type Database = {
           is_active?: boolean;
           line_user_id?: string | null;
           department_id?: string | null;
+          email?: string | null;
         };
         Relationships: [];
       };
