@@ -81,6 +81,17 @@ export interface DepartmentsApi {
 
 export interface AccessApi {
   listPendingRequests(): Promise<AccessRequest[]>;
+  /** admin สร้างบัญชีเจ้าหน้าที่ใหม่ (auth user + staff) — คืน error string ถ้าไม่สำเร็จ */
+  createUser(
+    input: {
+      email: string;
+      full_name: string;
+      role: StaffRole;
+      department_id: string | null;
+      password: string;
+    },
+    actorId: string,
+  ): Promise<{ error: string | null }>;
   approve(
     requestId: string,
     role: StaffRole,

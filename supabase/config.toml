@@ -36,3 +36,7 @@ enable_confirmations = false
 # Edge Function เรียก Opus 4.8 — verify_jwt เพื่อให้เรียกได้เฉพาะผู้ใช้ที่ login
 [functions.classify-preferences]
 verify_jwt = true
+
+# Edge Function สร้างบัญชีเจ้าหน้าที่ (ตรวจสิทธิ์ admin ภายใน) — ต้อง login
+[functions.admin-create-user]
+verify_jwt = true

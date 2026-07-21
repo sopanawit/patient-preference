@@ -120,6 +120,26 @@ const dashboard: DashboardApi = {
 };
 
 const access: AccessApi = {
+  async createUser(input) {
+    const { data, error } = await supabase.functions.invoke(
+      "admin-create-user",
+      { body: input },
+    );
+    if (error) {
+      // non-2xx (เช่น 401/403/500) — พยายามอ่านข้อความจาก response
+      let msg = "สร้างผู้ใช้ไม่สำเร็จ (สิทธิ์ไม่พอหรือเซิร์ฟเวอร์ผิดพลาด)";
+      try {
+        const ctx = (error as { context?: Response }).context;
+        const body = ctx ? await ctx.json() : null;
+        if (body?.error) msg = body.error;
+      } catch {
+        /* ใช้ข้อความ default */
+      }
+      return { error: msg };
+    }
+    if (data && data.ok === false) return { error: data.message ?? "สร้างผู้ใช้ไม่สำเร็จ" };
+    return { error: null };
+  },
   async listPendingRequests() {
     const { data } = await supabase
       .from("access_requests")

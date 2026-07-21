@@ -415,6 +415,24 @@ const access: AccessApi = {
   async listPendingRequests() {
     return db.requests.filter((r) => r.status === "pending");
   },
+  async createUser({ email, full_name, role, department_id, password }) {
+    const key = email.trim().toLowerCase();
+    if (!key.includes("@")) return { error: "อีเมลไม่ถูกต้อง" };
+    if (password.length < 8)
+      return { error: "รหัสผ่านต้องอย่างน้อย 8 ตัวอักษร" };
+    if (db.emailToStaffId[key]) return { error: "อีเมลนี้มีบัญชีอยู่แล้ว" };
+    const staffId = id("staff");
+    db.staff.push({
+      id: staffId,
+      full_name: full_name.trim(),
+      role,
+      is_active: true,
+      department_id,
+      line_user_id: null,
+    });
+    db.emailToStaffId[key] = staffId;
+    return { error: null };
+  },
   async approve(requestId) {
     const r = db.requests.find((x) => x.id === requestId);
     if (r) r.status = "approved";

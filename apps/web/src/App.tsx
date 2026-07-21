@@ -17,6 +17,7 @@ import { SearchPage } from "@/features/search/SearchPage";
 import { ReviewPage } from "@/features/review/ReviewPage";
 import { AdminPage } from "@/features/admin/AdminPage";
 import { AccessRequestsPage } from "@/features/admin/access/AccessRequestsPage";
+import { CreateUserPage } from "@/features/admin/users/CreateUserPage";
 import { DepartmentsPage } from "@/features/admin/departments/DepartmentsPage";
 import { LineSettingsPage } from "@/features/admin/LineSettingsPage";
 import iconUrl from "@/assets/koon-icon.png";
@@ -175,6 +176,14 @@ export function App() {
               element={
                 <RequireRole allow={ADMIN_ONLY}>
                   <AccessRequestsPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RequireRole allow={ADMIN_ONLY}>
+                  <CreateUserPage />
                 </RequireRole>
               }
             />
