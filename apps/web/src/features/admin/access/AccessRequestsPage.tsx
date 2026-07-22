@@ -113,44 +113,51 @@ export function AccessRequestsPage() {
           ) : (
             <ul className="divide-y divide-slate-100">
               {requests.map((req) => (
-                <li key={req.id} className="flex flex-wrap items-center gap-3 px-5 py-4">
+                <li
+                  key={req.id}
+                  className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:flex-wrap sm:items-center"
+                >
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-slate-800">{req.full_name}</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="break-words font-medium text-slate-800">
+                      {req.full_name}
+                    </p>
+                    <p className="break-words text-sm text-slate-500">
                       แผนก: {deptName(req.department_id)}
                       {req.note ? ` · ${req.note}` : ""}
                     </p>
                   </div>
-                  <select
-                    value={chosenRole[req.id] ?? "cs"}
-                    onChange={(e) =>
-                      setChosenRole((m) => ({
-                        ...m,
-                        [req.id]: e.target.value as StaffRole,
-                      }))
-                    }
-                    className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
-                  >
-                    {ASSIGNABLE_ROLES.map((r) => (
-                      <option key={r} value={r}>
-                        {ROLE_LABELS[r]}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    disabled={busy === req.id}
-                    onClick={() => void approve(req)}
-                    className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-                  >
-                    อนุมัติ
-                  </button>
-                  <button
-                    disabled={busy === req.id}
-                    onClick={() => void reject(req)}
-                    className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-50 disabled:opacity-60"
-                  >
-                    ปฏิเสธ
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={chosenRole[req.id] ?? "cs"}
+                      onChange={(e) =>
+                        setChosenRole((m) => ({
+                          ...m,
+                          [req.id]: e.target.value as StaffRole,
+                        }))
+                      }
+                      className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                    >
+                      {ASSIGNABLE_ROLES.map((r) => (
+                        <option key={r} value={r}>
+                          {ROLE_LABELS[r]}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      disabled={busy === req.id}
+                      onClick={() => void approve(req)}
+                      className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      อนุมัติ
+                    </button>
+                    <button
+                      disabled={busy === req.id}
+                      onClick={() => void reject(req)}
+                      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-50 disabled:opacity-60"
+                    >
+                      ปฏิเสธ
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -232,59 +239,64 @@ export function AccessRequestsPage() {
                   </div>
                 </li>
               ) : (
-                <li key={row.id} className="flex flex-wrap items-center gap-3 px-5 py-4">
+                <li
+                  key={row.id}
+                  className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:flex-wrap sm:items-center"
+                >
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-slate-800">
+                    <p className="break-words font-medium text-slate-800">
                       {row.full_name}
                       {!row.is_active && (
-                        <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600">
+                        <span className="ml-2 whitespace-nowrap rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600">
                           ถูกระงับ
                         </span>
                       )}
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="break-words text-sm text-slate-500">
                       {row.email ? `${row.email} · ` : ""}แผนก: {deptName(row.department_id)}
                     </p>
                   </div>
-                  <button
-                    onClick={() => startEdit(row)}
-                    className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-50"
-                  >
-                    แก้ไข
-                  </button>
-                  <select
-                    value={row.role}
-                    disabled={row.role === "admin"}
-                    onChange={(e) => void changeRole(row, e.target.value as StaffRole)}
-                    className="rounded-md border border-slate-300 px-2 py-1.5 text-sm disabled:bg-brand-50 disabled:text-slate-400"
-                  >
-                    {(row.role === "admin"
-                      ? (["admin"] as StaffRole[])
-                      : [...ASSIGNABLE_ROLES]
-                    ).map((r) => (
-                      <option key={r} value={r}>
-                        {ROLE_LABELS[r]}
-                      </option>
-                    ))}
-                  </select>
-                  {row.role !== "admin" &&
-                    (row.is_active ? (
-                      <button
-                        disabled={busy === row.id}
-                        onClick={() => void setActive(row, false)}
-                        className="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
-                      >
-                        ระงับสิทธิ์
-                      </button>
-                    ) : (
-                      <button
-                        disabled={busy === row.id}
-                        onClick={() => void setActive(row, true)}
-                        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-50 disabled:opacity-60"
-                      >
-                        คืนสิทธิ์
-                      </button>
-                    ))}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => startEdit(row)}
+                      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-50"
+                    >
+                      แก้ไข
+                    </button>
+                    <select
+                      value={row.role}
+                      disabled={row.role === "admin"}
+                      onChange={(e) => void changeRole(row, e.target.value as StaffRole)}
+                      className="rounded-md border border-slate-300 px-2 py-1.5 text-sm disabled:bg-brand-50 disabled:text-slate-400"
+                    >
+                      {(row.role === "admin"
+                        ? (["admin"] as StaffRole[])
+                        : [...ASSIGNABLE_ROLES]
+                      ).map((r) => (
+                        <option key={r} value={r}>
+                          {ROLE_LABELS[r]}
+                        </option>
+                      ))}
+                    </select>
+                    {row.role !== "admin" &&
+                      (row.is_active ? (
+                        <button
+                          disabled={busy === row.id}
+                          onClick={() => void setActive(row, false)}
+                          className="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                        >
+                          ระงับสิทธิ์
+                        </button>
+                      ) : (
+                        <button
+                          disabled={busy === row.id}
+                          onClick={() => void setActive(row, true)}
+                          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-50 disabled:opacity-60"
+                        >
+                          คืนสิทธิ์
+                        </button>
+                      ))}
+                  </div>
                 </li>
               ),
             )}
