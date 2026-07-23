@@ -12,6 +12,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { RequireRole } from "@/components/RequireRole";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
+import { ActiveAdmissionsPage } from "@/features/dashboard/ActiveAdmissionsPage";
 import { EntryPage } from "@/features/entry/EntryPage";
 import { SearchPage } from "@/features/search/SearchPage";
 import { ReviewPage } from "@/features/review/ReviewPage";
@@ -153,6 +154,7 @@ export function App() {
           >
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/admissions" element={<ActiveAdmissionsPage />} />
             <Route path="/entry" element={<EntryPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route

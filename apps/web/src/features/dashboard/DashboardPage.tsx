@@ -11,7 +11,12 @@ const CARDS: {
   adminOnly?: boolean;
 }[] = [
   { key: "patients", label: "คนไข้ทั้งหมด", accent: "text-slate-800" },
-  { key: "activeAdmissions", label: "กำลังแอดมิท", accent: "text-emerald-600" },
+  {
+    key: "activeAdmissions",
+    label: "กำลังแอดมิท",
+    to: "/admissions",
+    accent: "text-emerald-600",
+  },
   {
     key: "pendingReviews",
     label: "รอ CX ตรวจ",
