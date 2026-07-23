@@ -53,6 +53,15 @@ export interface Admission {
   status: AdmissionStatus;
 }
 
+/** รายการคนไข้ที่กำลังแอดมิท (active) พร้อมชื่อ — ใช้ในหน้าภาพรวมแอดมิท */
+export interface ActiveAdmission {
+  id: string;
+  hn: string;
+  full_name: string;
+  room: string;
+  admit_date: string;
+}
+
 export interface Assignment {
   id: string;
   department_id: string;

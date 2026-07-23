@@ -16,6 +16,7 @@ import type {
 } from "./api";
 import type {
   AccessRequest,
+  ActiveAdmission,
   Admission,
   Analysis,
   AnalysisItem,
@@ -27,6 +28,7 @@ import type {
   StaffProfile,
   StaffRole,
 } from "./model";
+import { compareRooms } from "./sort";
 
 let seq = 0;
 const id = (prefix: string) => `${prefix}-${++seq}`;
@@ -503,6 +505,19 @@ const dashboard: DashboardApi = {
         ? db.requests.filter((r) => r.status === "pending").length
         : 0,
     };
+  },
+  async listActiveAdmissions(): Promise<ActiveAdmission[]> {
+    return db.admissions
+      .filter((a) => a.status === "active")
+      .map((a) => ({
+        id: a.id,
+        hn: a.hn,
+        full_name:
+          db.patients.find((p) => p.hn === a.hn)?.full_name ?? a.hn,
+        room: a.room,
+        admit_date: a.admit_date,
+      }))
+      .sort((a, b) => compareRooms(a.room, b.room));
   },
 };
 

@@ -4,6 +4,7 @@
 // ============================================================================
 import type {
   AccessRequest,
+  ActiveAdmission,
   Admission,
   Analysis,
   AuthSnapshot,
@@ -119,6 +120,8 @@ export interface SettingsApi {
 
 export interface DashboardApi {
   overview(isAdmin: boolean): Promise<OverviewCounts>;
+  /** คนไข้ที่กำลังแอดมิท เรียงตามห้องพักจากน้อยไปมาก */
+  listActiveAdmissions(): Promise<ActiveAdmission[]>;
 }
 
 export interface DataClient {

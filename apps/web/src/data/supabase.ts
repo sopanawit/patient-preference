@@ -17,6 +17,7 @@ import type {
   SettingsApi,
 } from "./api";
 import type {
+  ActiveAdmission,
   Analysis,
   AnalysisItem,
   AnalysisStatus,
@@ -26,6 +27,7 @@ import type {
   StaffProfile,
   StaffRole,
 } from "./model";
+import { compareRooms } from "./sort";
 import { APP_SETTING_KEYS } from "@patient-preference/shared";
 
 // รูปแบบ row ของ analysis_assignments ที่ดึงมาประกอบ
@@ -116,6 +118,34 @@ const dashboard: DashboardApi = {
           : Promise.resolve(0),
       ]);
     return { patients, activeAdmissions, pendingReviews, pendingRequests };
+  },
+  async listActiveAdmissions(): Promise<ActiveAdmission[]> {
+    const { data: adms } = await supabase
+      .from("admissions")
+      .select("id, hn, room, admit_date")
+      .eq("status", "active");
+    const rows = adms ?? [];
+    if (rows.length === 0) return [];
+
+    // ดึงชื่อคนไข้ของ HN ที่กำลังแอดมิทเป็นชุดเดียว แล้วประกอบเข้าด้วยกัน
+    const hns = [...new Set(rows.map((a) => a.hn))];
+    const { data: patientRows } = await supabase
+      .from("patients")
+      .select("hn, full_name")
+      .in("hn", hns);
+    const nameByHn = new Map(
+      (patientRows ?? []).map((p) => [p.hn, p.full_name]),
+    );
+
+    return rows
+      .map((a) => ({
+        id: a.id,
+        hn: a.hn,
+        full_name: nameByHn.get(a.hn) ?? a.hn,
+        room: a.room,
+        admit_date: a.admit_date,
+      }))
+      .sort((a, b) => compareRooms(a.room, b.room));
   },
 };
 
