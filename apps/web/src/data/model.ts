@@ -111,3 +111,15 @@ export interface PatientView {
   currentRoom: string | null;
   analysis: Analysis | null;
 }
+
+/** รายการหนึ่งแถวในหน้ารายชื่อคนที่กำลังแอดมิท */
+export interface AdmittedPatient {
+  hn: string;
+  full_name: string;
+  room: string;
+  admit_date: string;
+  /** มีความชอบ/ไม่ชอบกรอกไว้หรือยัง */
+  hasPreferences: boolean;
+  /** สถานะผลจัดหมวดของ HN นี้ (null = ยังไม่มีผลจัดหมวด) */
+  analysisStatus: AnalysisStatus | null;
+}

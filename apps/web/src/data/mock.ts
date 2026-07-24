@@ -276,6 +276,28 @@ const patients: PatientsApi = {
       db.admissions.find((a) => a.hn === hn && a.status === "active") ?? null
     );
   },
+  async listActiveAdmissions() {
+    return db.admissions
+      .filter((a) => a.status === "active")
+      .sort((a, b) => b.admit_date.localeCompare(a.admit_date))
+      .map((adm) => {
+        const patient = db.patients.find((p) => p.hn === adm.hn);
+        const analysis = db.analyses.find(
+          (an) => an.hn === adm.hn && an.is_current,
+        );
+        return {
+          hn: adm.hn,
+          full_name: patient?.full_name ?? adm.hn,
+          room: adm.room,
+          admit_date: adm.admit_date,
+          hasPreferences: Boolean(
+            (patient?.likes_text ?? "").trim() ||
+              (patient?.dislikes_text ?? "").trim(),
+          ),
+          analysisStatus: analysis?.status ?? null,
+        };
+      });
+  },
   async discharge(hn) {
     const adm = db.admissions.find((a) => a.hn === hn && a.status === "active");
     if (adm) adm.status = "discharged";
