@@ -5,6 +5,7 @@
 import type {
   AccessRequest,
   Admission,
+  AdmittedPatient,
   Analysis,
   AuthSnapshot,
   Department,
@@ -42,6 +43,8 @@ export interface PatientsApi {
   }): Promise<void>;
   view(hn: string): Promise<PatientView | null>;
   currentAdmission(hn: string): Promise<Admission | null>;
+  /** รายชื่อคนที่กำลังแอดมิท (status=active) เรียงตามวันแอดมิทล่าสุด */
+  listActiveAdmissions(): Promise<AdmittedPatient[]>;
   /** จำหน่ายคนไข้: ตั้ง admission ที่ active อยู่ของ HN นี้เป็น discharged */
   discharge(hn: string, actorId: string): Promise<void>;
   /** คำที่เคยกรอกทั้งระบบ (แยก like/dislike) — ใช้เป็นคลัง autocomplete */

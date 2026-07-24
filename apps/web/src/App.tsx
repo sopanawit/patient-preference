@@ -14,6 +14,8 @@ import { LoginPage } from "@/features/auth/LoginPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { EntryPage } from "@/features/entry/EntryPage";
 import { SearchPage } from "@/features/search/SearchPage";
+import { AdmissionsPage } from "@/features/admissions/AdmissionsPage";
+import { PatientDetailPage } from "@/features/patient/PatientDetailPage";
 import { ReviewPage } from "@/features/review/ReviewPage";
 import { AdminPage } from "@/features/admin/AdminPage";
 import { AccessRequestsPage } from "@/features/admin/access/AccessRequestsPage";
@@ -26,6 +28,7 @@ import type { StaffRole } from "@/types/database";
 const NAV: { to: string; label: string; roles?: StaffRole[] }[] = [
   { to: "/dashboard", label: "ภาพรวม" },
   { to: "/entry", label: "กรอกข้อมูล" },
+  { to: "/admissions", label: "คนแอดมิท" },
   { to: "/search", label: "ค้นด้วย HN" },
   { to: "/review", label: "คิวรอตรวจ", roles: ["cx_manager", "admin"] },
   { to: "/admin", label: "ตั้งค่า", roles: ["admin"] },
@@ -154,6 +157,8 @@ export function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/entry" element={<EntryPage />} />
+            <Route path="/admissions" element={<AdmissionsPage />} />
+            <Route path="/patient/:hn" element={<PatientDetailPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route
               path="/review"

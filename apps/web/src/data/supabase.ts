@@ -453,6 +453,52 @@ const patients: PatientsApi = {
     return data ?? null;
   },
 
+  async listActiveAdmissions() {
+    const { data: admRows } = await supabase
+      .from("admissions")
+      .select("hn, room, admit_date, patients(full_name, likes_text, dislikes_text)")
+      .eq("status", "active")
+      .order("admit_date", { ascending: false })
+      .order("created_at", { ascending: false });
+    const rows = (admRows ?? []) as unknown as {
+      hn: string;
+      room: string;
+      admit_date: string;
+      patients: {
+        full_name: string;
+        likes_text: string | null;
+        dislikes_text: string | null;
+      } | null;
+    }[];
+    if (rows.length === 0) return [];
+
+    // สถานะผลจัดหมวดปัจจุบันของแต่ละ HN (เวอร์ชัน is_current)
+    const hns = [...new Set(rows.map((r) => r.hn))];
+    const { data: anaRows } = await supabase
+      .from("preference_analysis")
+      .select("hn, status")
+      .eq("is_current", true)
+      .in("hn", hns);
+    const statusByHn = new Map<string, AnalysisStatus>(
+      ((anaRows ?? []) as { hn: string; status: AnalysisStatus }[]).map((a) => [
+        a.hn,
+        a.status,
+      ]),
+    );
+
+    return rows.map((r) => ({
+      hn: r.hn,
+      full_name: r.patients?.full_name ?? r.hn,
+      room: r.room,
+      admit_date: r.admit_date,
+      hasPreferences: Boolean(
+        (r.patients?.likes_text ?? "").trim() ||
+          (r.patients?.dislikes_text ?? "").trim(),
+      ),
+      analysisStatus: statusByHn.get(r.hn) ?? null,
+    }));
+  },
+
   async discharge(hn, actorId) {
     const { data: adm } = await supabase
       .from("admissions")
