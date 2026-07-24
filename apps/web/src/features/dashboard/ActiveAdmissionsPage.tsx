@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { db, type ActiveAdmission } from "@/data";
 
 /**
@@ -8,6 +8,7 @@ import { db, type ActiveAdmission } from "@/data";
  */
 export function ActiveAdmissionsPage() {
   const [rows, setRows] = useState<ActiveAdmission[] | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let active = true;
@@ -35,7 +36,9 @@ export function ActiveAdmissionsPage() {
           <span className="text-sm text-slate-500">{rows.length} คน</span>
         )}
       </div>
-      <p className="mt-1 text-sm text-slate-500">เรียงตามห้องพักจากน้อยไปมาก</p>
+      <p className="mt-1 text-sm text-slate-500">
+        เรียงตามห้องพักจากน้อยไปมาก — กดชื่อเพื่อดูสิ่งที่เคยกรอกไว้
+      </p>
 
       <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {rows === null ? (
@@ -55,16 +58,31 @@ export function ActiveAdmissionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {rows.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-800">
-                    {r.room}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{r.hn}</td>
-                  <td className="px-4 py-3 text-slate-800">{r.full_name}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.admit_date}</td>
-                </tr>
-              ))}
+              {rows.map((r) => {
+                const to = `/patient/${encodeURIComponent(r.hn)}`;
+                return (
+                  <tr
+                    key={r.id}
+                    onClick={() => navigate(to)}
+                    className="cursor-pointer transition-colors hover:bg-brand-50"
+                  >
+                    <td className="px-4 py-3 font-medium text-slate-800">
+                      {r.room}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{r.hn}</td>
+                    <td className="px-4 py-3">
+                      <Link
+                        to={to}
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-medium text-brand-700 hover:underline"
+                      >
+                        {r.full_name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{r.admit_date}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
