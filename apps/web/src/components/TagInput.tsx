@@ -6,6 +6,11 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
  *
  * ค่าเก็บเป็น string เดียว คั่นด้วย "\n" เพื่อให้เข้ากันได้กับ likes_text/dislikes_text เดิม
  * (data layer แยกรายการด้วย /[\n,]/ อยู่แล้ว)
+ *
+ * หมายเหตุมือถือ/Android: soft keyboard หลายตัว (Samsung, Gboard) ระหว่าง compose คำ
+ * จะยิง keydown ด้วย key "Unidentified"/keyCode 229 ไม่ใช่ "Enter" ทำให้ดักด้วย e.key
+ * อย่างเดียวไม่พอ — จึงดักเจตนาขึ้นบรรทัดใหม่ผ่าน native `beforeinput`
+ * (inputType === "insertLineBreak") และดักตัวคั่นคอมมาใน onChange เพิ่ม
  */
 
 export function textToTags(text: string): string[] {
@@ -56,31 +61,64 @@ export function TagInput({
 
   useEffect(() => setActiveIdx(0), [draft, open]);
 
-  function addTag(raw: string) {
-    const tag = raw.trim();
-    if (!tag) return;
-    if (tags.some((t) => t.toLowerCase() === tag.toLowerCase())) {
-      setDraft("");
-      return;
+  // เพิ่มหลาย tag พร้อมกัน (กันซ้ำ case-insensitive) — ไม่ยุ่งกับ draft/open
+  function commitTags(raws: string[]) {
+    const existing = new Set(tags.map((t) => t.toLowerCase()));
+    const fresh: string[] = [];
+    for (const raw of raws) {
+      const tag = raw.trim();
+      if (!tag || existing.has(tag.toLowerCase())) continue;
+      existing.add(tag.toLowerCase());
+      fresh.push(tag);
     }
-    onChange(tagsToText([...tags, tag]));
-    onAddTag?.(tag);
+    if (!fresh.length) return;
+    onChange(tagsToText([...tags, ...fresh]));
+    fresh.forEach((t) => onAddTag?.(t));
+  }
+
+  function addTag(raw: string) {
+    commitTags([raw]);
     setDraft("");
     setOpen(false);
+  }
+
+  // ยืนยัน draft ปัจจุบันเป็น tag ; preferMatch = true จะเลือกตัวเลือกใน dropdown ที่ active อยู่
+  function commitDraft(preferMatch: boolean) {
+    if (!draft.trim()) return;
+    if (preferMatch && open && matches[activeIdx]) addTag(matches[activeIdx]);
+    else addTag(draft);
   }
 
   function removeAt(idx: number) {
     onChange(tagsToText(tags.filter((_, i) => i !== idx)));
   }
 
+  // ดัก Enter จาก soft keyboard (Android) ที่ไม่ยิง keydown key === "Enter"
+  // ผ่าน native beforeinput ; ใช้ ref ชี้ closure ล่าสุดเพื่อผูก listener ครั้งเดียว
+  const commitRef = useRef<() => void>(() => {});
+  commitRef.current = () => commitDraft(true);
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const handler = (e: Event) => {
+      const inputType = (e as InputEvent).inputType;
+      if (inputType === "insertLineBreak" || inputType === "insertParagraph") {
+        e.preventDefault();
+        commitRef.current();
+      }
+    };
+    el.addEventListener("beforeinput", handler);
+    return () => el.removeEventListener("beforeinput", handler);
+  }, []);
+
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    // ระหว่าง IME compose (มือถือ/ภาษาที่ต้อง compose) key อาจเป็น "Unidentified"/keyCode 229
+    // → ปล่อยให้ beforeinput (Enter) และ onChange (คอมมา) เป็นตัวจัดการแทน
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+
     if ((e.key === "Enter" || e.key === ",") && draft.trim()) {
       e.preventDefault();
-      if (open && matches[activeIdx] && e.key === "Enter") {
-        addTag(matches[activeIdx]);
-      } else {
-        addTag(draft);
-      }
+      commitDraft(e.key === "Enter");
       return;
     }
     if (e.key === "Backspace" && !draft && tags.length) {
@@ -129,8 +167,20 @@ export function TagInput({
         <input
           ref={inputRef}
           value={draft}
+          enterKeyHint="done"
           onChange={(e) => {
-            setDraft(e.target.value);
+            const val = e.target.value;
+            // ถ้ามีตัวคั่น (คอมมา/ขึ้นบรรทัด) โผล่ในค่า → ตัดเป็น tag ทันที
+            // รองรับ IME/มือถือที่ไม่ยิง keydown "Enter" และการวางข้อความหลายรายการ
+            if (/[\n,]/.test(val)) {
+              const parts = val.split(/[\n,]/);
+              const last = parts.pop() ?? "";
+              commitTags(parts);
+              setDraft(last);
+              setOpen(true);
+              return;
+            }
+            setDraft(val);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
