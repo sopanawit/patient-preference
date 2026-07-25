@@ -52,10 +52,19 @@ export function ReviewPage() {
     await db.analysis.addAssignment(itemId, { department_id, action_text }, profile.id);
     await load();
   }
-  async function confirm(analysisId: string) {
+  async function confirm(a: Analysis) {
     if (!profile) return;
-    setBusy(analysisId);
-    await db.analysis.confirm(analysisId, profile.id);
+    // กันเผยแพร่ว่างเปล่า: ถ้ายังไม่ได้แบ่งแผนกให้ความต้องการใดเลย ผลลัพธ์ที่ยืนยัน
+    // จะโชว์หัวข้อ "สิ่งที่แต่ละแผนกต้องเตรียม" โดยไม่มีรายการ — เตือนก่อน
+    const hasAssignment = a.items.some((i) => i.assignments.length > 0);
+    if (!hasAssignment) {
+      const ok = window.confirm(
+        "ยังไม่ได้แบ่งแผนกให้ความต้องการใดเลย — ยืนยันแล้วหน้าคนไข้จะไม่มีรายการให้แผนกเตรียม\nต้องการยืนยันโดยไม่มี action หรือไม่?",
+      );
+      if (!ok) return;
+    }
+    setBusy(a.id);
+    await db.analysis.confirm(a.id, profile.id);
     setBusy(null);
     await load();
   }
@@ -90,7 +99,7 @@ export function ReviewPage() {
                 </h2>
                 <button
                   disabled={busy === a.id}
-                  onClick={() => void confirm(a.id)}
+                  onClick={() => void confirm(a)}
                   className="rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
                 >
                   ยืนยัน

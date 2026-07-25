@@ -104,6 +104,12 @@ export function PatientDetail({
           <h3 className="text-sm font-semibold text-slate-700">
             สิ่งที่แต่ละแผนกต้องเตรียม
           </h3>
+          {grouped.length === 0 && (
+            <p className="rounded-md bg-slate-50 px-4 py-3 text-sm text-slate-500">
+              ยืนยันแล้วแต่ยังไม่ได้แบ่งแผนกให้ความต้องการใด — CX ต้องเข้าไปที่คิวรอตรวจ
+              เพื่อเลือกแผนกและระบุ action ที่ต้องเตรียม
+            </p>
+          )}
           {grouped.map((g) => (
             <div
               key={g.deptId}
