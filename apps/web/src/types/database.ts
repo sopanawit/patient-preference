@@ -151,15 +151,18 @@ export type Database = {
           analysis_id: string;
           source: "like" | "dislike";
           original_text: string;
+          status: AnalysisStatus;
         };
         Insert: {
           id?: string;
           analysis_id: string;
           source: "like" | "dislike";
           original_text: string;
+          status?: AnalysisStatus;
         };
         Update: {
           original_text?: string;
+          status?: AnalysisStatus;
         };
         Relationships: [];
       };

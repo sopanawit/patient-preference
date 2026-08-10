@@ -73,10 +73,21 @@ export interface AnalysisItem {
   id: string;
   source: "like" | "dislike";
   original_text: string;
+  /**
+   * สถานะการตรวจ "ระดับรายการ" — เมื่อคนไข้มีความชอบใหม่เพิ่มเข้ามา เฉพาะรายการใหม่
+   * เท่านั้นที่เป็น `pending_review` ส่วนรายการเดิมที่ CX ตรวจแล้วยังคง `confirmed`
+   * (CX ไม่ต้องตรวจซ้ำทั้งหมด — ดู CLAUDE.md 7.4)
+   */
+  status: AnalysisStatus;
   assignments: Assignment[];
 }
 
-/** ผลจัดหมวดของ HN หนึ่ง (version current) พร้อม items+assignments */
+/**
+ * ผลจัดหมวดของ HN หนึ่ง (version current) พร้อม items+assignments
+ *
+ * `status` เป็นสถานะรวม (aggregate) ที่คำนวณจาก items:
+ * ถ้ามี item ใดยัง `pending_review` → รวมเป็น `pending_review`, ไม่งั้น `confirmed`
+ */
 export interface Analysis {
   id: string;
   hn: string;

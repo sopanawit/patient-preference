@@ -336,6 +336,9 @@ async function assembleAnalyses(
     asgByItem.set(a.item_id, arr);
   }
 
+  // สถานะรายการย่อยยังอิงตามสถานะของ analysis (backend partial-review ทำในเฟสถัดไป)
+  const statusByAnalysis = new Map(rows.map((r) => [r.id, r.status]));
+
   const itemsByAnalysis = new Map<string, AnalysisItem[]>();
   for (const it of items) {
     const arr = itemsByAnalysis.get(it.analysis_id) ?? [];
@@ -343,6 +346,7 @@ async function assembleAnalyses(
       id: it.id,
       source: it.source,
       original_text: it.original_text,
+      status: statusByAnalysis.get(it.analysis_id) ?? "pending_review",
       assignments: asgByItem.get(it.id) ?? [],
     });
     itemsByAnalysis.set(it.analysis_id, arr);

@@ -197,7 +197,8 @@ create table analysis_items (
   id uuid primary key default gen_random_uuid(),
   analysis_id uuid not null references preference_analysis(id) on delete cascade,
   source text not null check (source in ('like','dislike')),
-  original_text text not null        -- ข้อความ free text ต้นทางที่อ้างอิง
+  original_text text not null,       -- ข้อความ free text ต้นทางที่อ้างอิง
+  status analysis_status not null default 'pending_review'  -- ตรวจรายรายการ (partial review, ดู 7.4)
 );
 
 -- การจัด action: 1 ความต้องการ → หลายแผนกได้
@@ -263,8 +264,12 @@ create table audit_log (
                       ▲                                   │
                       └──────── แก้ free text อีกครั้ง ────┘
 ```
-- **กติกาสำคัญ:** เมื่อ record ที่ `confirmed` ถูกแก้ความชอบ → **regenerate + เด้งกลับ `pending_review`** ให้ CX ตรวจซ้ำ (กันข้อมูลเผยแพร่โดยไม่ผ่านตา)
-- การ transition ไป `confirmed` ทำได้เฉพาะ `cx_manager` / `admin`
+- **กติกาสำคัญ (partial review):** เมื่อ record ที่ `confirmed` ถูกแก้ความชอบ → ตรวจ **เฉพาะรายการที่เปลี่ยน** ไม่ต้องเด้งกลับทั้งก้อน
+  - สถานะการตรวจเก็บ **ระดับรายการ** (`analysis_items.status`) ไม่ใช่ทั้ง analysis
+  - เพิ่มความชอบใหม่ → สร้าง item ใหม่สถานะ `pending_review` (CX ตรวจเฉพาะอันนี้) ; รายการเดิมที่ `confirmed` แล้วคงไว้ ไม่ต้องตรวจซ้ำ และยัง **แสดง action ต่อไปได้**
+  - ลบความชอบออกจาก free text → item นั้นหายไป (รวม assignment)
+  - `preference_analysis.status` เป็น **aggregate**: มี item ใด `pending_review` → เป็น `pending_review`, ไม่งั้น `confirmed`
+- การ transition item ไป `confirmed` ทำได้เฉพาะ `cx_manager` / `admin`
 
 ### 7.5 การค้นหาและแสดงผล (Search & Display)
 - ค้นด้วย **HN** → แสดง: ชื่อ, ห้องพัก ณ ปัจจุบัน (จาก admission ที่ active), likes/dislikes, และ action รายแผนก

@@ -41,13 +41,24 @@ export function PatientDetail({
   }
 
   const analysis = view.analysis;
-  const showActions = analysis?.status === "confirmed";
+  // แสดง action จาก "รายการที่ยืนยันแล้ว" เท่านั้น — ถึงจะมีความต้องการใหม่รอตรวจ
+  // ค้างอยู่ ก็ยังเห็นของเดิมที่ CX ยืนยันไปแล้ว (partial review — CLAUDE.md 7.5)
+  const confirmedItems = useMemo(
+    () => analysis?.items.filter((i) => i.status === "confirmed") ?? [],
+    [analysis],
+  );
+  const pendingCount = useMemo(
+    () =>
+      analysis?.items.filter((i) => i.status === "pending_review").length ?? 0,
+    [analysis],
+  );
+  const showActions = confirmedItems.length > 0;
 
-  // จัดกลุ่ม assignment ตามแผนก (เฉพาะเมื่อ confirmed)
+  // จัดกลุ่ม assignment ตามแผนก (เฉพาะรายการที่ยืนยันแล้ว)
   const grouped = useMemo(() => {
-    if (!analysis || !showActions) return [];
+    if (!showActions) return [];
     const map = new Map<string, { original: string; action: string }[]>();
-    for (const item of analysis.items)
+    for (const item of confirmedItems)
       for (const asg of item.assignments) {
         const arr = map.get(asg.department_id) ?? [];
         arr.push({ original: item.original_text, action: asg.action_text });
@@ -58,7 +69,7 @@ export function PatientDetail({
       name: deptName(deptId),
       actions,
     }));
-  }, [analysis, showActions, deptName]);
+  }, [confirmedItems, showActions, deptName]);
 
   return (
     <div className="space-y-4">
@@ -98,8 +109,8 @@ export function PatientDetail({
         </div>
       </div>
 
-      {/* action รายแผนก */}
-      {showActions ? (
+      {/* action รายแผนก (จากรายการที่ยืนยันแล้ว) */}
+      {showActions && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-slate-700">
             สิ่งที่แต่ละแผนกต้องเตรียม
@@ -129,13 +140,20 @@ export function PatientDetail({
             </div>
           ))}
         </div>
-      ) : (
-        <p className="rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          {analysis
-            ? "ผลจัดหมวดรายแผนกกำลังรอ CX ตรวจยืนยัน — ยังไม่แสดง action"
-            : "ยังไม่มีผลจัดหมวดสำหรับคนไข้รายนี้"}
-        </p>
       )}
+
+      {/* สถานะรายการที่ยังรอตรวจ */}
+      {!analysis ? (
+        <p className="rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          ยังไม่มีผลจัดหมวดสำหรับคนไข้รายนี้
+        </p>
+      ) : pendingCount > 0 ? (
+        <p className="rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          {showActions
+            ? `มีความต้องการใหม่ ${pendingCount} รายการ กำลังรอ CX ตรวจ — จะแสดง action เพิ่มเมื่อยืนยัน`
+            : "ผลจัดหมวดรายแผนกกำลังรอ CX ตรวจยืนยัน — ยังไม่แสดง action"}
+        </p>
+      ) : null}
     </div>
   );
 }

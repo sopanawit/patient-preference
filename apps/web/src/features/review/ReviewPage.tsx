@@ -54,12 +54,13 @@ export function ReviewPage() {
   }
   async function confirm(a: Analysis) {
     if (!profile) return;
-    // กันเผยแพร่ว่างเปล่า: ถ้ายังไม่ได้แบ่งแผนกให้ความต้องการใดเลย ผลลัพธ์ที่ยืนยัน
-    // จะโชว์หัวข้อ "สิ่งที่แต่ละแผนกต้องเตรียม" โดยไม่มีรายการ — เตือนก่อน
-    const hasAssignment = a.items.some((i) => i.assignments.length > 0);
+    // ยืนยันเฉพาะ "รายการใหม่" ที่ยังรอตรวจ — กันเผยแพร่ว่างเปล่า: ถ้ารายการใหม่
+    // เหล่านั้นยังไม่ได้แบ่งแผนกเลย ก็เตือนก่อน (รายการเดิมที่ confirmed ไม่นับ)
+    const pending = a.items.filter((i) => i.status === "pending_review");
+    const hasAssignment = pending.some((i) => i.assignments.length > 0);
     if (!hasAssignment) {
       const ok = window.confirm(
-        "ยังไม่ได้แบ่งแผนกให้ความต้องการใดเลย — ยืนยันแล้วหน้าคนไข้จะไม่มีรายการให้แผนกเตรียม\nต้องการยืนยันโดยไม่มี action หรือไม่?",
+        "ยังไม่ได้แบ่งแผนกให้ความต้องการใหม่เลย — ยืนยันแล้วหน้าคนไข้จะไม่มีรายการใหม่ให้แผนกเตรียม\nต้องการยืนยันโดยไม่มี action หรือไม่?",
       );
       if (!ok) return;
     }
@@ -85,88 +86,139 @@ export function ReviewPage() {
         </p>
       ) : (
         <div className="mt-6 space-y-6">
-          {items.map((a) => (
-            <div
-              key={a.id}
-              className="rounded-xl border border-slate-200 bg-white p-5"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="min-w-0 break-words font-semibold text-slate-800">
-                  {names[a.hn]}{" "}
-                  <span className="text-sm font-normal text-slate-400">
-                    ({a.hn})
-                  </span>
-                </h2>
-                <button
-                  disabled={busy === a.id}
-                  onClick={() => void confirm(a)}
-                  className="rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  ยืนยัน
-                </button>
-              </div>
+          {items.map((a) => {
+            const pending = a.items.filter((i) => i.status === "pending_review");
+            const confirmed = a.items.filter((i) => i.status === "confirmed");
+            const deptName = (deptId: string) =>
+              depts.find((d) => d.id === deptId)?.name_th ?? "อื่น ๆ";
+            return (
+              <div
+                key={a.id}
+                className="rounded-xl border border-slate-200 bg-white p-5"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="min-w-0 break-words font-semibold text-slate-800">
+                    {names[a.hn]}{" "}
+                    <span className="text-sm font-normal text-slate-400">
+                      ({a.hn})
+                    </span>
+                  </h2>
+                  <button
+                    disabled={busy === a.id}
+                    onClick={() => void confirm(a)}
+                    className="rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                  >
+                    {confirmed.length > 0 ? "ยืนยันรายการใหม่" : "ยืนยัน"}
+                  </button>
+                </div>
 
-              <div className="mt-4 space-y-4">
-                {a.items.map((item) => (
-                  <div key={item.id} className="rounded-lg bg-brand-50 p-3">
-                    <p className="text-sm">
-                      <span
-                        className={`mr-2 rounded px-1.5 py-0.5 text-xs ${
-                          item.source === "like"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-rose-100 text-rose-700"
-                        }`}
-                      >
-                        {item.source === "like" ? "ชอบ" : "ไม่ชอบ"}
-                      </span>
-                      {item.original_text}
-                    </p>
+                {confirmed.length > 0 && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    มี {confirmed.length} รายการที่ยืนยันไว้แล้ว (ด้านล่าง) — ตรวจเฉพาะ{" "}
+                    {pending.length} รายการใหม่
+                  </p>
+                )}
 
-                    <div className="mt-2 space-y-2">
-                      {item.assignments.map((asg) => (
-                        <div
-                          key={asg.id}
-                          className="flex flex-wrap items-center gap-2"
+                <div className="mt-4 space-y-4">
+                  {pending.map((item) => (
+                    <div key={item.id} className="rounded-lg bg-brand-50 p-3">
+                      <p className="text-sm">
+                        <span
+                          className={`mr-2 rounded px-1.5 py-0.5 text-xs ${
+                            item.source === "like"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-rose-100 text-rose-700"
+                          }`}
                         >
-                          <select
-                            defaultValue={asg.department_id}
-                            onChange={(e) => void moveDept(asg.id, e.target.value)}
-                            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm sm:w-auto"
+                          {item.source === "like" ? "ชอบ" : "ไม่ชอบ"}
+                        </span>
+                        {item.original_text}
+                      </p>
+
+                      <div className="mt-2 space-y-2">
+                        {item.assignments.map((asg) => (
+                          <div
+                            key={asg.id}
+                            className="flex flex-wrap items-center gap-2"
                           >
-                            {depts.map((d) => (
-                              <option key={d.id} value={d.id}>
-                                {d.name_th}
-                              </option>
+                            <select
+                              defaultValue={asg.department_id}
+                              onChange={(e) => void moveDept(asg.id, e.target.value)}
+                              className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm sm:w-auto"
+                            >
+                              {depts.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                  {d.name_th}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              defaultValue={asg.action_text}
+                              onBlur={(e) => void editAction(asg.id, e.target.value)}
+                              className={`${field} w-full sm:flex-1`}
+                            />
+                            <button
+                              onClick={() => void remove(asg.id)}
+                              className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+                            >
+                              ลบ
+                            </button>
+                          </div>
+                        ))}
+                        {item.assignments.length === 0 && (
+                          <p className="text-xs text-slate-400">
+                            ยังไม่ได้แบ่งแผนก — เลือกแผนกและพิมพ์ action ด้านล่าง
+                          </p>
+                        )}
+                        <AddAssignment
+                          depts={depts}
+                          onAdd={(d, a) => void addAssign(item.id, d, a)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {confirmed.length > 0 && (
+                  <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <summary className="cursor-pointer text-xs font-medium text-slate-500">
+                      ยืนยันแล้ว {confirmed.length} รายการ (ตรวจแล้ว ไม่ต้องตรวจซ้ำ)
+                    </summary>
+                    <div className="mt-3 space-y-3">
+                      {confirmed.map((item) => (
+                        <div key={item.id} className="text-sm">
+                          <p className="text-slate-600">
+                            <span
+                              className={`mr-2 rounded px-1.5 py-0.5 text-xs ${
+                                item.source === "like"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-rose-100 text-rose-700"
+                              }`}
+                            >
+                              {item.source === "like" ? "ชอบ" : "ไม่ชอบ"}
+                            </span>
+                            {item.original_text}
+                          </p>
+                          <ul className="mt-1 space-y-0.5 pl-2">
+                            {item.assignments.map((asg) => (
+                              <li key={asg.id} className="text-xs text-slate-500">
+                                • {deptName(asg.department_id)}: {asg.action_text}
+                              </li>
                             ))}
-                          </select>
-                          <input
-                            defaultValue={asg.action_text}
-                            onBlur={(e) => void editAction(asg.id, e.target.value)}
-                            className={`${field} w-full sm:flex-1`}
-                          />
-                          <button
-                            onClick={() => void remove(asg.id)}
-                            className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
-                          >
-                            ลบ
-                          </button>
+                            {item.assignments.length === 0 && (
+                              <li className="text-xs text-slate-400">
+                                (ไม่มี action)
+                              </li>
+                            )}
+                          </ul>
                         </div>
                       ))}
-                      {item.assignments.length === 0 && (
-                        <p className="text-xs text-slate-400">
-                          ยังไม่ได้แบ่งแผนก — เลือกแผนกและพิมพ์ action ด้านล่าง
-                        </p>
-                      )}
-                      <AddAssignment
-                        depts={depts}
-                        onAdd={(d, a) => void addAssign(item.id, d, a)}
-                      />
                     </div>
-                  </div>
-                ))}
+                  </details>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
