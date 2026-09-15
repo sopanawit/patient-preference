@@ -5,6 +5,24 @@ import { useAuth } from "@/lib/auth";
 import logoUrl from "@/assets/koon-logo.png";
 
 /**
+ * แปลง error จาก Supabase Auth เป็นข้อความไทยที่บอกสาเหตุชัด (ช่วยวินิจฉัยว่า
+ * รหัสผ่านผิด / ไม่มีบัญชี / อีเมลยังไม่ยืนยัน / ถูก rate limit) — เดิมแสดง
+ * ข้อความรวมเดียวทุกกรณีทำให้แยกไม่ออก
+ */
+function friendlyAuthError(raw: string): string {
+  const m = raw.toLowerCase();
+  if (/invalid login credentials/.test(m))
+    return "อีเมลหรือรหัสผ่านไม่ถูกต้อง (บัญชีนี้อาจยังไม่ถูกสร้างในระบบ)";
+  if (/email not confirmed/.test(m))
+    return "อีเมลนี้ยังไม่ได้ยืนยัน — ติดต่อผู้ดูแลระบบให้ยืนยันบัญชี";
+  if (/email logins are disabled/.test(m))
+    return "การเข้าสู่ระบบด้วยอีเมลถูกปิดอยู่ — ติดต่อผู้ดูแลระบบ";
+  if (/rate limit|too many/.test(m))
+    return "พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่";
+  return `เข้าสู่ระบบไม่สำเร็จ: ${raw}`;
+}
+
+/**
  * หน้า login สำหรับ admin (email/password ผ่าน Supabase Auth)
  * staff ทั่วไปเข้าผ่าน LINE LIFF (ทำภายหลัง) ไม่ใช้หน้านี้
  */
@@ -31,7 +49,7 @@ export function LoginPage() {
     const { error: signInError } = await db.auth.signIn(emailVal, passwordVal);
     if (signInError) {
       setSubmitting(false);
-      setError("เข้าสู่ระบบไม่สำเร็จ — ตรวจสอบอีเมลและรหัสผ่าน");
+      setError(friendlyAuthError(signInError));
       return;
     }
     // ไม่ต้อง navigate เอง — เมื่อ auth state อัปเดต useAuth().userId จะทำให้
