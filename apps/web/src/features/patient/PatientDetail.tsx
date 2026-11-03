@@ -165,7 +165,7 @@ export function PatientDetail({
       {/* ผู้บันทึกข้อมูลล่าสุด */}
       {view.savedByName && (
         <p className="pt-1 text-right text-xs text-slate-400">
-          คุณ{view.savedByName} บันทึก
+          {view.savedByName} บันทึก
           {view.savedAt
             ? ` · ${new Date(view.savedAt).toLocaleDateString("th-TH", {
                 day: "numeric",
