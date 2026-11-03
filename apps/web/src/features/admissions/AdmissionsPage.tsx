@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { db, type AdmittedPatient } from "@/data";
+import { REVIEW_ENABLED } from "@/lib/features";
 
 /**
  * รายชื่อคนที่กำลังแอดมิท — กดชื่อเพื่อดูรายละเอียดสิ่งที่เคยกรอกไว้
@@ -69,6 +70,11 @@ function StatusBadge({ row }: { row: AdmittedPatient }) {
       <span className={`${badge} bg-slate-100 text-slate-500`}>
         ยังไม่กรอกความชอบ
       </span>
+    );
+  // ปิดขั้นตอน CX → ไม่โชว์สถานะตรวจ แค่บอกว่ากรอกแล้ว (ดู lib/features.ts)
+  if (!REVIEW_ENABLED)
+    return (
+      <span className={`${badge} bg-emerald-100 text-emerald-700`}>กรอกแล้ว</span>
     );
   if (row.analysisStatus === "confirmed")
     return (

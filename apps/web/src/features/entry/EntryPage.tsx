@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { NON_MEDICAL_HINT } from "@patient-preference/shared";
 import { TagInput, textToTags } from "@/components/TagInput";
 import { useTagHistory } from "@/lib/useTagHistory";
+import { REVIEW_ENABLED } from "@/lib/features";
 
 const empty = {
   hn: "",
@@ -174,7 +175,7 @@ export function EntryPage() {
           </button>
           {status === "saved" && (
             <span className="text-sm text-emerald-600">
-              บันทึกแล้ว — ส่งให้ CX แบ่งแผนก (รอตรวจ)
+              {REVIEW_ENABLED ? "บันทึกแล้ว — ส่งให้ CX แบ่งแผนก (รอตรวจ)" : "บันทึกแล้ว"}
             </span>
           )}
           {loadedHn && status === "idle" && (

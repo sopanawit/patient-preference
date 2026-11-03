@@ -8,6 +8,7 @@ import {
   Routes,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { REVIEW_ENABLED } from "@/lib/features";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RequireRole } from "@/components/RequireRole";
 import { LoginPage } from "@/features/auth/LoginPage";
@@ -39,7 +40,10 @@ function Layout() {
   const { profile, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const items = NAV.filter(
-    (item) => !item.roles || (profile && item.roles.includes(profile.role)),
+    (item) =>
+      // ซ่อนเมนู "คิวรอตรวจ" เมื่อปิดขั้นตอน CX (ดู lib/features.ts)
+      (REVIEW_ENABLED || item.to !== "/review") &&
+      (!item.roles || (profile && item.roles.includes(profile.role))),
   );
 
   // ปิดเมนูมือถืออัตโนมัติเมื่อเปลี่ยนหน้า
@@ -165,9 +169,14 @@ export function App() {
             <Route
               path="/review"
               element={
-                <RequireRole allow={REVIEWERS}>
-                  <ReviewPage />
-                </RequireRole>
+                // ปิดขั้นตอน CX → กันเข้าหน้าคิวรอตรวจ (โค้ดยังอยู่ เปิดกลับได้ด้วย env)
+                REVIEW_ENABLED ? (
+                  <RequireRole allow={REVIEWERS}>
+                    <ReviewPage />
+                  </RequireRole>
+                ) : (
+                  <Navigate to="/dashboard" replace />
+                )
               }
             />
             <Route

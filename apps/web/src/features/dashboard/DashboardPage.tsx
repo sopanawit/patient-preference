@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { db, type OverviewCounts } from "@/data";
 import { useAuth } from "@/lib/auth";
+import { REVIEW_ENABLED } from "@/lib/features";
 
 const CARDS: {
   key: keyof OverviewCounts;
@@ -47,7 +48,12 @@ export function DashboardPage() {
     };
   }, [isAdmin]);
 
-  const cards = CARDS.filter((c) => !c.adminOnly || isAdmin);
+  const cards = CARDS.filter(
+    (c) =>
+      (!c.adminOnly || isAdmin) &&
+      // ซ่อนการ์ด "รอ CX ตรวจ" เมื่อปิดขั้นตอน CX (ดู lib/features.ts)
+      (REVIEW_ENABLED || c.key !== "pendingReviews"),
+  );
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">

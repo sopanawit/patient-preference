@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { db, type Department, type PatientView } from "@/data";
 import { useAuth } from "@/lib/auth";
+import { REVIEW_ENABLED } from "@/lib/features";
 
 /**
  * แสดงรายละเอียดคนไข้ 1 ราย: ชื่อ/ห้อง/ความชอบ (free text) + action รายแผนก
@@ -109,6 +110,10 @@ export function PatientDetail({
         </div>
       </div>
 
+      {/* ส่วน action รายแผนก + สถานะตรวจ — ซ่อนทั้งหมดเมื่อปิดขั้นตอน CX
+          (แสดงแค่ความชอบ/ไม่ชอบด้านบน ; โค้ดยังอยู่ เปิดกลับได้ด้วย env) */}
+      {REVIEW_ENABLED && (
+        <>
       {/* action รายแผนก (จากรายการที่ยืนยันแล้ว) */}
       {showActions && (
         <div className="space-y-3">
@@ -154,6 +159,8 @@ export function PatientDetail({
             : "ผลจัดหมวดรายแผนกกำลังรอ CX ตรวจยืนยัน — ยังไม่แสดง action"}
         </p>
       ) : null}
+        </>
+      )}
     </div>
   );
 }
