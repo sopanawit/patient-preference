@@ -11,6 +11,7 @@ import type {
   AuthSnapshot,
   Department,
   Patient,
+  PatientExportRow,
   PatientView,
   Staff,
   StaffProfile,
@@ -50,6 +51,8 @@ export interface PatientsApi {
   discharge(hn: string, actorId: string): Promise<void>;
   /** คำที่เคยกรอกทั้งระบบ (แยก like/dislike) — ใช้เป็นคลัง autocomplete */
   listPreferenceTags(): Promise<{ likes: string[]; dislikes: string[] }>;
+  /** ดึงข้อมูลคนไข้ทั้งหมดสำหรับ export (Excel) — ใช้ในหน้า admin เท่านั้น */
+  exportAll(): Promise<PatientExportRow[]>;
 }
 
 export interface AnalysisApi {

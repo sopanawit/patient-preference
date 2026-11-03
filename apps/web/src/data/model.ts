@@ -43,6 +43,9 @@ export interface Patient {
   full_name: string;
   likes_text: string;
   dislikes_text: string;
+  /** staff id ของผู้บันทึกล่าสุด (ใช้ resolve เป็นชื่อในหน้าแสดงผล/export) */
+  updated_by?: string | null;
+  updated_at?: string | null;
 }
 
 export interface Admission {
@@ -121,6 +124,20 @@ export interface PatientView {
   patient: Patient;
   currentRoom: string | null;
   analysis: Analysis | null;
+  /** ชื่อผู้บันทึกข้อมูลล่าสุด (แสดงท้ายหน้า "คุณ...บันทึก") */
+  savedByName: string | null;
+  savedAt: string | null;
+}
+
+/** หนึ่งแถวสำหรับ export ข้อมูลคนไข้ทั้งหมด (Excel) */
+export interface PatientExportRow {
+  hn: string;
+  full_name: string;
+  room: string | null;
+  likes_text: string;
+  dislikes_text: string;
+  saved_by_name: string | null;
+  saved_at: string | null;
 }
 
 /** รายการหนึ่งแถวในหน้ารายชื่อคนที่กำลังแอดมิท */

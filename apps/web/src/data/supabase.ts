@@ -23,6 +23,7 @@ import type {
   AnalysisStatus,
   Assignment,
   AuthSnapshot,
+  PatientExportRow,
   Staff,
   StaffProfile,
   StaffRole,
@@ -392,7 +393,13 @@ const patients: PatientsApi = {
     if (existing) {
       await supabase
         .from("patients")
-        .update({ full_name, likes_text, dislikes_text, updated_by: actorId })
+        .update({
+          full_name,
+          likes_text,
+          dislikes_text,
+          updated_by: actorId,
+          updated_at: new Date().toISOString(),
+        })
         .eq("hn", hn);
     } else {
       await supabase
@@ -442,7 +449,7 @@ const patients: PatientsApi = {
   async view(hn) {
     const { data: patient } = await supabase
       .from("patients")
-      .select("hn, full_name, likes_text, dislikes_text")
+      .select("hn, full_name, likes_text, dislikes_text, updated_by, updated_at")
       .eq("hn", hn)
       .maybeSingle();
     if (!patient) return null;
@@ -463,6 +470,17 @@ const patients: PatientsApi = {
       .eq("is_current", true);
     const [analysis] = await assembleAnalyses(anaRows ?? []);
 
+    // ชื่อผู้บันทึกล่าสุด (resolve จาก staff)
+    let savedByName: string | null = null;
+    if (patient.updated_by) {
+      const { data: st } = await supabase
+        .from("staff")
+        .select("full_name")
+        .eq("id", patient.updated_by)
+        .maybeSingle();
+      savedByName = st?.full_name ?? null;
+    }
+
     return {
       patient: {
         hn: patient.hn,
@@ -472,6 +490,8 @@ const patients: PatientsApi = {
       },
       currentRoom: adm?.room ?? null,
       analysis: analysis ?? null,
+      savedByName,
+      savedAt: patient.updated_at ?? null,
     };
   },
 
@@ -561,6 +581,53 @@ const patients: PatientsApi = {
       splitTags(p.dislikes_text).forEach((t) => dislikes.add(t));
     }
     return { likes: [...likes], dislikes: [...dislikes] };
+  },
+
+  async exportAll(): Promise<PatientExportRow[]> {
+    const { data: pats } = await supabase
+      .from("patients")
+      .select("hn, full_name, likes_text, dislikes_text, updated_by, updated_at")
+      .order("hn", { ascending: true });
+    const rows = (pats ?? []) as {
+      hn: string;
+      full_name: string;
+      likes_text: string | null;
+      dislikes_text: string | null;
+      updated_by: string | null;
+      updated_at: string | null;
+    }[];
+    if (rows.length === 0) return [];
+
+    // ห้องพักปัจจุบัน (active admission) ต่อ HN
+    const { data: adms } = await supabase
+      .from("admissions")
+      .select("hn, room")
+      .eq("status", "active");
+    const roomByHn = new Map(
+      ((adms ?? []) as { hn: string; room: string }[]).map((a) => [a.hn, a.room]),
+    );
+
+    // ชื่อผู้บันทึกล่าสุด
+    const ids = [...new Set(rows.map((r) => r.updated_by).filter(Boolean))] as string[];
+    const { data: staff } = ids.length
+      ? await supabase.from("staff").select("id, full_name").in("id", ids)
+      : { data: [] as { id: string; full_name: string }[] };
+    const nameById = new Map(
+      ((staff ?? []) as { id: string; full_name: string }[]).map((s) => [
+        s.id,
+        s.full_name,
+      ]),
+    );
+
+    return rows.map((r) => ({
+      hn: r.hn,
+      full_name: r.full_name,
+      room: roomByHn.get(r.hn) ?? null,
+      likes_text: r.likes_text ?? "",
+      dislikes_text: r.dislikes_text ?? "",
+      saved_by_name: r.updated_by ? nameById.get(r.updated_by) ?? null : null,
+      saved_at: r.updated_at ?? null,
+    }));
   },
 };
 

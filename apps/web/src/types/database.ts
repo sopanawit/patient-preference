@@ -67,6 +67,7 @@ export type Database = {
           likes_text?: string | null;
           dislikes_text?: string | null;
           updated_by?: string | null;
+          updated_at?: Timestamptz;
         };
         Relationships: [];
       };
