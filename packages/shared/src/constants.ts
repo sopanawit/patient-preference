@@ -20,11 +20,14 @@ export const REQUEST_STATUSES = ["pending", "approved", "rejected"] as const;
 /** role ที่ admin กำหนดให้ผู้ขอผ่าน LINE ได้ (ไม่รวม admin) */
 export const ASSIGNABLE_ROLES = ["cs", "nurse", "cx_manager"] as const;
 
-/** key ของค่าตั้งค่าใน app_settings (LINE config) */
+/**
+ * key ของค่าตั้งค่าใน app_settings ที่ "client แก้ได้" (LINE config ที่ไม่ลับ)
+ * ⚠️ line_channel_secret เป็นความลับ — ไม่อยู่ในนี้ ต้องเก็บเป็น Edge Function secret
+ *    (ดู migration 0008) เพื่อไม่ให้ค่าถูกส่งมาฝั่ง browser ผ่าน anon client
+ */
 export const APP_SETTING_KEYS = [
   "line_liff_id",
   "line_channel_id",
-  "line_channel_secret",
 ] as const;
 
 /** label ภาษาไทยของแต่ละ role */
@@ -47,3 +50,34 @@ export const OTHER_DEPARTMENT_CODE = "other";
  */
 export const NON_MEDICAL_HINT =
   "กรอกเฉพาะเรื่องทั่วไป เช่น สภาพห้อง สิ่งอำนวยความสะดวก การสื่อสาร — ห้ามกรอกอาการป่วย/การวินิจฉัย/การรักษา";
+
+/**
+ * คำที่ "น่าจะเป็นข้อมูลการแพทย์" — ใช้เตือนผู้กรอก (soft warning, ไม่บล็อก)
+ * เพื่อกันข้อมูล sensitive (PDPA ม.26) หลุดเข้าระบบที่ออกแบบมาสำหรับ non-medical
+ * เลือกคำที่ชัดเจนเพื่อลด false positive (เลี่ยงคำกว้างอย่าง "ยา"/"โรค" เดี่ยว ๆ)
+ */
+export const MEDICAL_TERM_KEYWORDS = [
+  "เบาหวาน",
+  "ความดัน",
+  "มะเร็ง",
+  "แพ้ยา",
+  "ยาประจำ",
+  "โรคประจำตัว",
+  "วินิจฉัย",
+  "ผ่าตัด",
+  "ฉีดยา",
+  "อาการ",
+  "ติดเชื้อ",
+  "วัณโรค",
+  "จิตเวช",
+  "ซึมเศร้า",
+  "หอบหืด",
+  "ลมชัก",
+  "HIV",
+] as const;
+
+/** คืนคำต้องสงสัยว่าเป็นข้อมูลการแพทย์ที่พบในข้อความ (ไม่พบ = []) */
+export function findMedicalTerms(text: string): string[] {
+  const lower = (text ?? "").toLowerCase();
+  return MEDICAL_TERM_KEYWORDS.filter((kw) => lower.includes(kw.toLowerCase()));
+}

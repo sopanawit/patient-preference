@@ -11,8 +11,10 @@ import { createClient } from "@supabase/supabase-js";
 
 const VALID_ROLES = ["cs", "nurse", "cx_manager", "admin"];
 
+// จำกัด origin ได้ด้วย env ALLOWED_ORIGIN (ไม่ตั้ง = "*" — เสี่ยงต่ำเพราะใช้ bearer token)
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
 const CORS: Record<string, string> = {
-  "access-control-allow-origin": "*",
+  "access-control-allow-origin": ALLOWED_ORIGIN,
   "access-control-allow-headers":
     "authorization, x-client-info, apikey, content-type",
   "access-control-allow-methods": "POST, OPTIONS",

@@ -6,7 +6,6 @@ import { APP_SETTING_KEYS } from "@patient-preference/shared";
 const FIELDS: { key: (typeof APP_SETTING_KEYS)[number]; label: string; secret?: boolean }[] = [
   { key: "line_liff_id", label: "LIFF ID" },
   { key: "line_channel_id", label: "Channel ID" },
-  { key: "line_channel_secret", label: "Channel Secret", secret: true },
 ];
 
 /**
@@ -72,9 +71,9 @@ export function LineSettingsPage() {
           )}
         </div>
 
-        <p className="pt-2 text-xs text-amber-600">
-          ⚠️ Channel Secret เป็นความลับ — production ควรพิจารณาเก็บไว้ที่ Edge Function
-          env แทนการเก็บในฐานข้อมูล
+        <p className="pt-2 text-xs text-slate-500">
+          🔒 Channel Secret เป็นความลับ จึงไม่ตั้งค่าที่นี่ — เก็บเป็น Edge Function
+          secret (เช่น <code>LINE_CHANNEL_SECRET</code>) บน Supabase เท่านั้น
         </p>
       </div>
     </div>

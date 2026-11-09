@@ -584,18 +584,29 @@ const patients: PatientsApi = {
   },
 
   async exportAll(): Promise<PatientExportRow[]> {
-    const { data: pats } = await supabase
-      .from("patients")
-      .select("hn, full_name, likes_text, dislikes_text, updated_by, updated_at")
-      .order("hn", { ascending: true });
-    const rows = (pats ?? []) as {
+    type Row = {
       hn: string;
       full_name: string;
       likes_text: string | null;
       dislikes_text: string | null;
       updated_by: string | null;
       updated_at: string | null;
-    }[];
+    };
+    // ดึงทีละหน้า — PostgREST จำกัดผลลัพธ์ที่ max_rows (1000) ต่อครั้ง
+    // ไม่ทำ pagination จะได้ข้อมูลไม่ครบแบบเงียบ ๆ เมื่อคนไข้เกิน 1000 ราย
+    const PAGE = 1000;
+    const rows: Row[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from("patients")
+        .select("hn, full_name, likes_text, dislikes_text, updated_by, updated_at")
+        .order("hn", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) break;
+      const page = (data ?? []) as Row[];
+      rows.push(...page);
+      if (page.length < PAGE) break;
+    }
     if (rows.length === 0) return [];
 
     // ห้องพักปัจจุบัน (active admission) ต่อ HN
@@ -618,6 +629,13 @@ const patients: PatientsApi = {
         s.full_name,
       ]),
     );
+
+    // audit: การ export ข้อมูลส่วนบุคคลทั้งก้อนต้อง trace ได้ (PDPA accountability)
+    const { data: sess } = await sbAuth().getSession();
+    const actorId = sess.session?.user.id ?? null;
+    if (actorId) {
+      await audit(actorId, "export", "patient", "all", { count: rows.length });
+    }
 
     return rows.map((r) => ({
       hn: r.hn,

@@ -7,6 +7,19 @@ import { useCallback, useState } from "react";
 const PREFIX = "pref-tag-history:";
 const MAX = 200;
 
+/**
+ * ล้างคลังคำ autocomplete ทั้งหมดใน localStorage — เรียกตอน logout
+ * กันข้อมูลความชอบของคนไข้ค้างบนเครื่องที่ใช้ร่วมกัน (shared workstation) ข้ามผู้ใช้
+ */
+export function clearTagHistory(): void {
+  try {
+    const keys = Object.keys(localStorage).filter((k) => k.startsWith(PREFIX));
+    keys.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // อ่าน/ลบ localStorage ไม่ได้ (private mode ฯลฯ) — ข้าม
+  }
+}
+
 function load(key: string): string[] {
   try {
     const raw = localStorage.getItem(PREFIX + key);

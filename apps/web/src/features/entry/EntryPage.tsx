@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { db } from "@/data";
 import { useAuth } from "@/lib/auth";
-import { NON_MEDICAL_HINT } from "@patient-preference/shared";
+import { NON_MEDICAL_HINT, findMedicalTerms } from "@patient-preference/shared";
 import { TagInput, textToTags } from "@/components/TagInput";
 import { useTagHistory } from "@/lib/useTagHistory";
 import { REVIEW_ENABLED } from "@/lib/features";
@@ -45,6 +45,11 @@ export function EntryPage() {
     setForm((f) => ({ ...f, [k]: v }));
     setStatus("idle");
   };
+
+  // เตือน (ไม่บล็อก) ถ้าพบคำที่น่าจะเป็นข้อมูลการแพทย์ — กัน sensitive data (PDPA ม.26)
+  const medicalTerms = findMedicalTerms(
+    `${form.likes_text}\n${form.dislikes_text}`,
+  );
 
   async function lookup() {
     const hn = form.hn.trim();
@@ -164,6 +169,13 @@ export function EntryPage() {
             placeholder="เช่น ไม่ชอบเสียงดัง แล้วกด Enter"
           />
         </div>
+
+        {medicalTerms.length > 0 && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            ⚠️ พบคำที่อาจเป็นข้อมูลการแพทย์ ({medicalTerms.join(", ")}) — ระบบนี้
+            สำหรับข้อมูลทั่วไป (non-medical) เท่านั้น กรุณาหลีกเลี่ยงอาการป่วย/การวินิจฉัย/การรักษา
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-3 pt-2">
           <button

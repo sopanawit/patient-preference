@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { db, type AuthSnapshot, type StaffProfile } from "@/data";
+import { clearTagHistory } from "@/lib/useTagHistory";
 
 interface AuthState {
   userId: string | null;
@@ -44,7 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       userId: snap.userId,
       profile: snap.profile,
       loading,
-      signOut: () => db.auth.signOut(),
+      signOut: async () => {
+        clearTagHistory(); // ล้างคลังคำความชอบที่ cache ไว้ กันค้างบนเครื่องใช้ร่วม
+        await db.auth.signOut();
+      },
       refreshProfile: async () => setSnap(await db.auth.getCurrent()),
     }),
     [snap, loading],
